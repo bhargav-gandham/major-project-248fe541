@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/cards/StatCard';
 import CreateUserForm from '@/components/admin/CreateUserForm';
+import { useUsers } from '@/hooks/useUsers';
 import { subjects } from '@/data/mockData';
-import { Users, BookOpen, FileText, Settings, Shield, TrendingUp, AlertCircle } from 'lucide-react';
+import { Users, BookOpen, FileText, Settings, Shield, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,14 +20,16 @@ import {
 
 const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const { users, isLoading: usersLoading, refetch } = useUsers();
 
-  const mockUsers = [
-    { id: '1', name: 'Prof. James Anderson', email: 'james@edu.com', role: 'faculty', status: 'active' },
-    { id: '2', name: 'Dr. Emily Chen', email: 'emily@edu.com', role: 'faculty', status: 'active' },
-    { id: '3', name: 'Alex Thompson', email: 'alex@edu.com', role: 'student', status: 'active' },
-    { id: '4', name: 'Sarah Wilson', email: 'sarah@edu.com', role: 'student', status: 'inactive' },
-    { id: '5', name: 'Michael Brown', email: 'michael@edu.com', role: 'parent', status: 'active' },
-  ];
+  const userCounts = {
+    admin: users.filter(u => u.role === 'admin').length,
+    faculty: users.filter(u => u.role === 'faculty').length,
+    student: users.filter(u => u.role === 'student').length,
+    parent: users.filter(u => u.role === 'parent').length,
+  };
+
+  const totalUsers = users.length;
 
   const getTitle = () => {
     switch (activeTab) {
@@ -36,6 +39,16 @@ const AdminDashboard: React.FC = () => {
       case 'reports': return 'Reports & Analytics';
       case 'settings': return 'System Settings';
       default: return 'Dashboard';
+    }
+  };
+
+  const getRoleBadgeClass = (role: string) => {
+    switch (role) {
+      case 'admin': return 'bg-primary';
+      case 'faculty': return 'bg-accent';
+      case 'student': return 'bg-success';
+      case 'parent': return 'bg-warning';
+      default: return 'bg-muted';
     }
   };
 
@@ -52,11 +65,10 @@ const AdminDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
               title="Total Users"
-              value={1284}
+              value={totalUsers}
               subtitle="Active accounts"
               icon={Users}
               variant="primary"
-              trend={{ value: 12, isPositive: true }}
             />
             <StatCard
               title="Active Subjects"
@@ -83,7 +95,7 @@ const AdminDashboard: React.FC = () => {
           </div>
 
           {/* Create User Form */}
-          <CreateUserForm />
+          <CreateUserForm onUserCreated={refetch} />
 
           {/* Overview Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -91,37 +103,37 @@ const AdminDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <span>User Distribution</span>
-                  <Button variant="ghost" size="sm">View All</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setActiveTab('users')}>View All</Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Students</span>
-                    <span className="font-medium">1,024</span>
+                    <span className="font-medium">{userCounts.student}</span>
                   </div>
-                  <Progress value={80} className="h-2" />
+                  <Progress value={totalUsers > 0 ? (userCounts.student / totalUsers) * 100 : 0} className="h-2" />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Faculty</span>
-                    <span className="font-medium">86</span>
+                    <span className="font-medium">{userCounts.faculty}</span>
                   </div>
-                  <Progress value={7} className="h-2 [&>div]:bg-accent" />
+                  <Progress value={totalUsers > 0 ? (userCounts.faculty / totalUsers) * 100 : 0} className="h-2 [&>div]:bg-accent" />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Parents</span>
-                    <span className="font-medium">168</span>
+                    <span className="font-medium">{userCounts.parent}</span>
                   </div>
-                  <Progress value={13} className="h-2 [&>div]:bg-success" />
+                  <Progress value={totalUsers > 0 ? (userCounts.parent / totalUsers) * 100 : 0} className="h-2 [&>div]:bg-success" />
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Admins</span>
-                    <span className="font-medium">6</span>
+                    <span className="font-medium">{userCounts.admin}</span>
                   </div>
-                  <Progress value={0.5} className="h-2 [&>div]:bg-warning" />
+                  <Progress value={totalUsers > 0 ? (userCounts.admin / totalUsers) * 100 : 0} className="h-2 [&>div]:bg-warning" />
                 </div>
               </CardContent>
             </Card>
@@ -159,42 +171,42 @@ const AdminDashboard: React.FC = () => {
             </Card>
           </div>
 
-          {/* Recent Activity */}
+          {/* Recent Users */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent User Activity</CardTitle>
+              <CardTitle>Recent Users</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockUsers.slice(0, 5).map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge className={user.status === 'active' ? 'bg-success' : 'bg-muted'}>
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="sm">Edit</Button>
-                      </TableCell>
+              {usersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : users.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No users found</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Email</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {users.slice(0, 5).map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white capitalize ${getRoleBadgeClass(user.role)}`}>
+                            {user.role}
+                          </span>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -202,42 +214,46 @@ const AdminDashboard: React.FC = () => {
 
       {activeTab === 'users' && (
         <div className="space-y-6 animate-fade-in">
-          <CreateUserForm />
+          <CreateUserForm onUserCreated={refetch} />
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize">{user.role}</Badge>
-                      </TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>
-                        <Badge className={user.status === 'active' ? 'bg-success' : 'bg-muted'}>
-                          {user.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="sm">Edit</Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">Delete</Button>
-                        </div>
-                      </TableCell>
+            <CardHeader>
+              <CardTitle>All Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {usersLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : users.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No users found. Create your first user above.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Created</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">{user.full_name}</TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white capitalize ${getRoleBadgeClass(user.role)}`}>
+                            {user.role}
+                          </span>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -261,12 +277,12 @@ const AdminDashboard: React.FC = () => {
                       <p className="font-display font-semibold text-foreground">{subject.name}</p>
                       <p className="text-sm text-muted-foreground">{subject.code}</p>
                     </div>
-                    <Badge className={
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white ${
                       subject.difficulty === 'hard' ? 'bg-destructive' :
                       subject.difficulty === 'medium' ? 'bg-warning' : 'bg-success'
-                    }>
+                    }`}>
                       {subject.difficulty}
-                    </Badge>
+                    </span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
                     Instructor: {subject.facultyName}

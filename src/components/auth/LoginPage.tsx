@@ -1,46 +1,28 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { GraduationCap, User, BookOpen, Users, Shield, ArrowRight, Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { GraduationCap, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
-interface LoginPageProps {
-  onLogin: () => void;
-}
-
-const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
+const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const roles = [
-    { id: 'admin' as UserRole, label: 'Administrator', icon: Shield, color: 'bg-primary', desc: 'System management' },
-    { id: 'faculty' as UserRole, label: 'Faculty', icon: BookOpen, color: 'bg-accent', desc: 'Course management' },
-    { id: 'student' as UserRole, label: 'Student', icon: GraduationCap, color: 'bg-success', desc: 'Learning portal' },
-    { id: 'parent' as UserRole, label: 'Parent', icon: Users, color: 'bg-warning', desc: 'Progress monitoring' },
-  ];
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedRole) return;
-
     setIsLoading(true);
     setError('');
 
     try {
-      const success = await login(email, password, selectedRole);
-      if (success) {
-        onLogin();
-      } else {
-        setError('Invalid credentials. Please try again.');
+      const result = await login(email, password);
+      if (!result.success) {
+        setError(result.error || 'Invalid credentials. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again.');
@@ -114,31 +96,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
           <Card className="border-0 shadow-xl">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl font-display">Welcome back</CardTitle>
-              <CardDescription>Select your role and sign in to continue</CardDescription>
+              <CardDescription>Sign in with your credentials</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Role Selection */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {roles.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => setSelectedRole(role.id)}
-                    className={cn(
-                      "p-4 rounded-xl border-2 transition-all duration-200 text-left",
-                      selectedRole === role.id
-                        ? "border-primary bg-primary/5 shadow-md"
-                        : "border-border hover:border-primary/50 hover:bg-muted/50"
-                    )}
-                  >
-                    <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-2", role.color)}>
-                      <role.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <p className="font-semibold text-foreground text-sm">{role.label}</p>
-                    <p className="text-xs text-muted-foreground">{role.desc}</p>
-                  </button>
-                ))}
-              </div>
-
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -185,7 +145,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
                   variant="hero"
                   size="lg"
                   className="w-full"
-                  disabled={!selectedRole || isLoading}
+                  disabled={isLoading}
                 >
                   {isLoading ? 'Signing in...' : 'Sign In'}
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -193,7 +153,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               </form>
 
               <p className="text-center text-sm text-muted-foreground mt-6">
-                Demo: Use any email with 4+ character password
+                Contact your administrator for account credentials
               </p>
             </CardContent>
           </Card>

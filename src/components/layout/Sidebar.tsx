@@ -54,10 +54,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       case 'parent':
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { id: 'progress', label: 'Academic Progress', icon: BarChart3 },
-          { id: 'assignments', label: 'Assignments', icon: FileText },
-          { id: 'eligibility', label: 'Exam Eligibility', icon: GraduationCap },
-          { id: 'resources', label: 'Resources', icon: FolderOpen },
         ];
       default:
         return [];

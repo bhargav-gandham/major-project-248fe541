@@ -6,10 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Loader2, CheckCircle } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const CreateUserForm: React.FC = () => {
+interface CreateUserFormProps {
+  onUserCreated?: () => void;
+}
+
+const CreateUserForm: React.FC<CreateUserFormProps> = ({ onUserCreated }) => {
   const { session } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -64,6 +68,9 @@ const CreateUserForm: React.FC = () => {
       setPassword('');
       setFullName('');
       setRole('');
+      
+      // Callback to refresh user list
+      onUserCreated?.();
     } catch (error: any) {
       toast.error(error.message || 'An unexpected error occurred');
     } finally {

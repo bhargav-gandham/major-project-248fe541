@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/cards/StatCard';
+import CreateUserForm from '@/components/admin/CreateUserForm';
 import { subjects } from '@/data/mockData';
-import { Users, BookOpen, FileText, Settings, Shield, TrendingUp, UserPlus, AlertCircle } from 'lucide-react';
+import { Users, BookOpen, FileText, Settings, Shield, TrendingUp, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +81,9 @@ const AdminDashboard: React.FC = () => {
               variant="primary"
             />
           </div>
+
+          {/* Create User Form */}
+          <CreateUserForm />
 
           {/* Overview Cards */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -198,13 +202,7 @@ const AdminDashboard: React.FC = () => {
 
       {activeTab === 'users' && (
         <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <p className="text-muted-foreground">Manage all system users</p>
-            <Button variant="hero">
-              <UserPlus className="w-4 h-4 mr-2" />
-              Add User
-            </Button>
-          </div>
+          <CreateUserForm />
           <Card>
             <CardContent className="p-0">
               <Table>

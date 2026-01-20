@@ -44,11 +44,23 @@ const SetupPage: React.FC<SetupPageProps> = ({ onComplete }) => {
       });
 
       if (error) {
+        // If admin already exists, just redirect to login
+        if (error.message?.includes('admin already exists')) {
+          toast.info('Admin already exists. Redirecting to login...');
+          onComplete();
+          return;
+        }
         toast.error(error.message || 'Failed to create admin');
         return;
       }
 
       if (data?.error) {
+        // If admin already exists, just redirect to login
+        if (data.error.includes('admin already exists')) {
+          toast.info('Admin already exists. Redirecting to login...');
+          onComplete();
+          return;
+        }
         toast.error(data.error);
         return;
       }

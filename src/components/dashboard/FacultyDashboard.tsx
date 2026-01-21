@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
+import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
+import { NoteCard } from '@/components/notes/NoteCard';
 import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
-import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award } from 'lucide-react';
+import { useNotes } from '@/hooks/useNotes';
+import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +32,7 @@ const FacultyDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { assignments, isLoading, deleteAssignment, fetchAssignments } = useAssignments();
   const { submissions, gradeSubmission } = useSubmissions();
+  const { notes, loading: notesLoading, deleteNote, refetch: refetchNotes } = useNotes();
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [gradingSubmission, setGradingSubmission] = useState<any>(null);
   const [gradeScore, setGradeScore] = useState('');
@@ -40,6 +44,7 @@ const FacultyDashboard: React.FC = () => {
       case 'dashboard': return 'Faculty Dashboard';
       case 'assignments': return 'Manage Assignments';
       case 'submissions': return 'Student Submissions';
+      case 'notes': return 'Study Notes';
       default: return 'Dashboard';
     }
   };
@@ -317,6 +322,43 @@ const FacultyDashboard: React.FC = () => {
                     })}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {activeTab === 'notes' && (
+        <div className="space-y-6 animate-fade-in">
+          <CreateNoteForm onSuccess={refetchNotes} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                All Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {notesLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : notes.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No notes created yet. Share your first note above.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {notes.map((note) => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      showDelete
+                      onDelete={deleteNote}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

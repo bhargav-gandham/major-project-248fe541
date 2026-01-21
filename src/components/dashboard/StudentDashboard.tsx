@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SubmitAssignmentForm from '@/components/student/SubmitAssignmentForm';
+import { NoteCard } from '@/components/notes/NoteCard';
 import { useAssignments, useSubmissions, Assignment } from '@/hooks/useAssignments';
-import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useNotes } from '@/hooks/useNotes';
+import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2, BookOpen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +14,7 @@ const StudentDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { assignments, isLoading: assignmentsLoading } = useAssignments();
   const { fetchMySubmission } = useSubmissions();
+  const { notes, loading: notesLoading } = useNotes();
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [mySubmissions, setMySubmissions] = useState<Record<string, any>>({});
   const [loadingSubmissions, setLoadingSubmissions] = useState(true);
@@ -44,6 +47,7 @@ const StudentDashboard: React.FC = () => {
       case 'assignments': return 'My Assignments';
       case 'eligibility': return 'Exam Eligibility';
       case 'grades': return 'My Grades';
+      case 'notes': return 'Study Notes';
       default: return 'Dashboard';
     }
   };
@@ -388,6 +392,42 @@ const StudentDashboard: React.FC = () => {
                   </Card>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'notes' && (
+        <div className="space-y-6 animate-fade-in">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <BookOpen className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Study Notes</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Access notes and study materials shared by your teachers
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {notesLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+            </div>
+          ) : notes.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No study notes available yet.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {notes.map((note) => (
+                <NoteCard key={note.id} note={note} />
+              ))}
             </div>
           )}
         </div>

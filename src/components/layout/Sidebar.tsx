@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'assignments', label: 'Assignments', icon: FileText },
           { id: 'submissions', label: 'Submissions', icon: ClipboardCheck },
+          { id: 'notes', label: 'Study Notes', icon: BookOpen },
           { id: 'resources', label: 'Resources', icon: FolderOpen },
           { id: 'students', label: 'Students', icon: Users },
         ];
@@ -48,6 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'assignments', label: 'My Assignments', icon: FileText },
           { id: 'eligibility', label: 'Exam Eligibility', icon: GraduationCap },
+          { id: 'notes', label: 'Study Notes', icon: BookOpen },
           { id: 'resources', label: 'Study Materials', icon: FolderOpen },
           { id: 'grades', label: 'My Grades', icon: BarChart3 },
         ];

@@ -333,6 +333,7 @@ const FacultyDashboard: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Student</TableHead>
                       <TableHead>Assignment</TableHead>
                       <TableHead>Submitted At</TableHead>
                       <TableHead>Late</TableHead>
@@ -346,6 +347,12 @@ const FacultyDashboard: React.FC = () => {
                       const assignment = assignments.find(a => a.id === sub.assignment_id);
                       return (
                         <TableRow key={sub.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{sub.student_name || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground">{sub.student_email}</p>
+                            </div>
+                          </TableCell>
                           <TableCell>{assignment?.title || 'Unknown'}</TableCell>
                           <TableCell>{new Date(sub.submitted_at).toLocaleString()}</TableCell>
                           <TableCell>

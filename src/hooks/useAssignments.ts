@@ -22,6 +22,8 @@ export interface Submission {
   score: number | null;
   feedback: string | null;
   is_late: boolean;
+  student_name?: string;
+  student_email?: string;
 }
 
 export const useAssignments = () => {
@@ -91,15 +93,41 @@ export const useSubmissions = (assignmentId?: string) => {
     setIsLoading(true);
     setError(null);
     try {
+      // Fetch submissions
       let query = supabase.from('submissions').select('*');
       
       if (assignmentId) {
         query = query.eq('assignment_id', assignmentId);
       }
 
-      const { data, error } = await query.order('submitted_at', { ascending: false });
-      if (error) throw error;
-      setSubmissions(data || []);
+      const { data: submissionsData, error: submissionsError } = await query.order('submitted_at', { ascending: false });
+      if (submissionsError) throw submissionsError;
+
+      // Fetch profiles for student names
+      const studentIds = [...new Set((submissionsData || []).map(s => s.student_id))];
+      
+      let profilesMap: Record<string, { full_name: string; email: string }> = {};
+      if (studentIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name, email')
+          .in('user_id', studentIds);
+        
+        if (profilesData) {
+          profilesData.forEach(p => {
+            profilesMap[p.user_id] = { full_name: p.full_name, email: p.email };
+          });
+        }
+      }
+
+      // Merge submissions with student info
+      const enrichedSubmissions = (submissionsData || []).map(sub => ({
+        ...sub,
+        student_name: profilesMap[sub.student_id]?.full_name || 'Unknown Student',
+        student_email: profilesMap[sub.student_id]?.email || '',
+      }));
+
+      setSubmissions(enrichedSubmissions);
     } catch (err: any) {
       console.error('Error fetching submissions:', err);
       setError(err?.message || 'Failed to fetch submissions');

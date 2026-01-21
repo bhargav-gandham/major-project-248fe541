@@ -85,9 +85,11 @@ export const useSubmissions = (assignmentId?: string) => {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [mySubmission, setMySubmission] = useState<Submission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchSubmissions = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       let query = supabase.from('submissions').select('*');
       
@@ -98,8 +100,9 @@ export const useSubmissions = (assignmentId?: string) => {
       const { data, error } = await query.order('submitted_at', { ascending: false });
       if (error) throw error;
       setSubmissions(data || []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching submissions:', err);
+      setError(err?.message || 'Failed to fetch submissions');
     } finally {
       setIsLoading(false);
     }
@@ -176,6 +179,7 @@ export const useSubmissions = (assignmentId?: string) => {
     submissions, 
     mySubmission, 
     isLoading, 
+    error,
     fetchSubmissions, 
     fetchMySubmission, 
     submitAssignment, 

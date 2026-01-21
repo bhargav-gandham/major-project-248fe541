@@ -41,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           { id: 'assignments', label: 'Assignments', icon: FileText },
           { id: 'submissions', label: 'Submissions', icon: ClipboardCheck },
           { id: 'notes', label: 'Study Notes', icon: BookOpen },
+          { id: 'integrity', label: 'Academic Integrity', icon: Shield },
           { id: 'students', label: 'Students', icon: Users },
         ];
       case 'student':

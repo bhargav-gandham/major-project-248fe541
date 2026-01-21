@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
 import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
 import { NoteCard } from '@/components/notes/NoteCard';
+import { PlagiarismReportCard } from '@/components/faculty/PlagiarismReportCard';
 import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
-import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen } from 'lucide-react';
+import { usePlagiarismCheck, PlagiarismReport } from '@/hooks/usePlagiarismCheck';
+import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -33,11 +35,38 @@ const FacultyDashboard: React.FC = () => {
   const { assignments, isLoading, deleteAssignment, fetchAssignments } = useAssignments();
   const { submissions, gradeSubmission } = useSubmissions();
   const { notes, loading: notesLoading, deleteNote, refetch: refetchNotes } = useNotes();
+  const { checkPlagiarism, getAllReports, isAnalyzing } = usePlagiarismCheck();
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
   const [gradingSubmission, setGradingSubmission] = useState<any>(null);
   const [gradeScore, setGradeScore] = useState('');
   const [gradeFeedback, setGradeFeedback] = useState('');
   const [isGrading, setIsGrading] = useState(false);
+  const [plagiarismReports, setPlagiarismReports] = useState<Record<string, PlagiarismReport>>({});
+  const [allReports, setAllReports] = useState<PlagiarismReport[]>([]);
+
+  useEffect(() => {
+    const loadReports = async () => {
+      const reports = await getAllReports();
+      setAllReports(reports);
+      const reportMap: Record<string, PlagiarismReport> = {};
+      reports.forEach(r => {
+        reportMap[r.submission_id] = r;
+      });
+      setPlagiarismReports(reportMap);
+    };
+    loadReports();
+  }, [submissions]);
+
+  const handleCheckPlagiarism = async (submissionId: string) => {
+    const report = await checkPlagiarism(submissionId);
+    if (report) {
+      setPlagiarismReports(prev => ({ ...prev, [submissionId]: report }));
+      setAllReports(prev => {
+        const filtered = prev.filter(r => r.submission_id !== submissionId);
+        return [report, ...filtered];
+      });
+    }
+  };
 
   const getTitle = () => {
     switch (activeTab) {
@@ -45,6 +74,7 @@ const FacultyDashboard: React.FC = () => {
       case 'assignments': return 'Manage Assignments';
       case 'submissions': return 'Student Submissions';
       case 'notes': return 'Study Notes';
+      case 'integrity': return 'Academic Integrity';
       default: return 'Dashboard';
     }
   };
@@ -280,6 +310,7 @@ const FacultyDashboard: React.FC = () => {
                       <TableHead>Submitted At</TableHead>
                       <TableHead>Late</TableHead>
                       <TableHead>Score</TableHead>
+                      <TableHead>Integrity</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -305,17 +336,41 @@ const FacultyDashboard: React.FC = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setGradingSubmission(sub);
-                                setGradeScore(sub.score?.toString() || '');
-                                setGradeFeedback(sub.feedback || '');
-                              }}
-                            >
-                              {sub.score !== null ? 'Edit Grade' : 'Grade'}
-                            </Button>
+                            {plagiarismReports[sub.id] ? (
+                              <PlagiarismReportCard report={plagiarismReports[sub.id]} compact />
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Not checked</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              {sub.typed_content && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleCheckPlagiarism(sub.id)}
+                                  disabled={isAnalyzing}
+                                  title="Check for plagiarism"
+                                >
+                                  {isAnalyzing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Shield className="w-4 h-4" />
+                                  )}
+                                </Button>
+                              )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setGradingSubmission(sub);
+                                  setGradeScore(sub.score?.toString() || '');
+                                  setGradeFeedback(sub.feedback || '');
+                                }}
+                              >
+                                {sub.score !== null ? 'Edit' : 'Grade'}
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -365,7 +420,84 @@ const FacultyDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Grading Dialog */}
+      {activeTab === 'integrity' && (
+        <div className="space-y-6 animate-fade-in">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Shield className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Academic Integrity Dashboard</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Review plagiarism reports and manage academic integrity across all submissions
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Search className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{allReports.length}</p>
+                    <p className="text-sm text-muted-foreground">Total Checks</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-destructive/10 flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{allReports.filter(r => r.is_flagged).length}</p>
+                    <p className="text-sm text-muted-foreground">Flagged</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{allReports.filter(r => !r.is_flagged).length}</p>
+                    <p className="text-sm text-muted-foreground">Clear</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {allReports.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No plagiarism checks performed yet.</p>
+                <p className="text-sm mt-1">
+                  Go to Submissions and click the shield icon to check a submission.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {allReports.map((report) => (
+                <PlagiarismReportCard key={report.id} report={report} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <Dialog open={!!gradingSubmission} onOpenChange={() => setGradingSubmission(null)}>
         <DialogContent>
           <DialogHeader>

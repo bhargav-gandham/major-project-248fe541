@@ -33,7 +33,13 @@ import { toast } from 'sonner';
 const FacultyDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { assignments, isLoading, deleteAssignment, fetchAssignments } = useAssignments();
-  const { submissions, gradeSubmission } = useSubmissions();
+  const {
+    submissions,
+    gradeSubmission,
+    isLoading: submissionsLoading,
+    error: submissionsError,
+    fetchSubmissions,
+  } = useSubmissions();
   const { notes, loading: notesLoading, deleteNote, refetch: refetchNotes } = useNotes();
   const { checkPlagiarism, getAllReports, isAnalyzing } = usePlagiarismCheck();
   const [selectedAssignment, setSelectedAssignment] = useState<string | null>(null);
@@ -56,6 +62,12 @@ const FacultyDashboard: React.FC = () => {
     };
     loadReports();
   }, [submissions]);
+
+  useEffect(() => {
+    if (activeTab === 'submissions') {
+      fetchSubmissions();
+    }
+  }, [activeTab, fetchSubmissions]);
 
   const handleCheckPlagiarism = async (submissionId: string) => {
     const report = await checkPlagiarism(submissionId);
@@ -300,7 +312,22 @@ const FacultyDashboard: React.FC = () => {
               <CardTitle>Submissions</CardTitle>
             </CardHeader>
             <CardContent>
-              {assignmentSubmissions.length === 0 ? (
+              {submissionsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : submissionsError ? (
+                <div className="space-y-3 py-6">
+                  <p className="text-center text-sm text-muted-foreground">
+                    Couldn't load submissions: {submissionsError}
+                  </p>
+                  <div className="flex justify-center">
+                    <Button variant="outline" onClick={fetchSubmissions}>
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              ) : assignmentSubmissions.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">No submissions yet.</p>
               ) : (
                 <Table>

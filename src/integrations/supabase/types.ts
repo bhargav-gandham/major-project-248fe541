@@ -83,6 +83,47 @@ export type Database = {
         }
         Relationships: []
       }
+      plagiarism_reports: {
+        Row: {
+          analysis_details: string | null
+          analyzed_at: string
+          analyzed_by: string | null
+          id: string
+          is_flagged: boolean
+          matched_submissions: Json | null
+          similarity_percentage: number
+          submission_id: string
+        }
+        Insert: {
+          analysis_details?: string | null
+          analyzed_at?: string
+          analyzed_by?: string | null
+          id?: string
+          is_flagged?: boolean
+          matched_submissions?: Json | null
+          similarity_percentage?: number
+          submission_id: string
+        }
+        Update: {
+          analysis_details?: string | null
+          analyzed_at?: string
+          analyzed_by?: string | null
+          id?: string
+          is_flagged?: boolean
+          matched_submissions?: Json | null
+          similarity_percentage?: number
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plagiarism_reports_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

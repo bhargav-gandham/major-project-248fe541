@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Assignment {
@@ -89,13 +89,13 @@ export const useSubmissions = (assignmentId?: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       // Fetch submissions
       let query = supabase.from('submissions').select('*');
-      
+
       if (assignmentId) {
         query = query.eq('assignment_id', assignmentId);
       }
@@ -104,26 +104,29 @@ export const useSubmissions = (assignmentId?: string) => {
       if (submissionsError) throw submissionsError;
 
       // Fetch profiles for student names
-      const studentIds = [...new Set((submissionsData || []).map(s => s.student_id))];
-      
+      const studentIds = [...new Set((submissionsData || []).map((s) => s.student_id))];
+
       let profilesMap: Record<string, { full_name: string; email: string }> = {};
       if (studentIds.length > 0) {
-        const { data: profilesData } = await supabase
+        const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('user_id, full_name, email')
           .in('user_id', studentIds);
-        
-        if (profilesData) {
-          profilesData.forEach(p => {
+
+        if (profilesError) {
+          // Don’t block the submissions list if profiles are locked down; just show IDs.
+          console.warn('Profiles lookup failed (RLS?)', profilesError);
+        } else if (profilesData) {
+          profilesData.forEach((p) => {
             profilesMap[p.user_id] = { full_name: p.full_name, email: p.email };
           });
         }
       }
 
       // Merge submissions with student info
-      const enrichedSubmissions = (submissionsData || []).map(sub => ({
+      const enrichedSubmissions = (submissionsData || []).map((sub) => ({
         ...sub,
-        student_name: profilesMap[sub.student_id]?.full_name || 'Unknown Student',
+        student_name: profilesMap[sub.student_id]?.full_name || sub.student_id,
         student_email: profilesMap[sub.student_id]?.email || '',
       }));
 
@@ -134,7 +137,7 @@ export const useSubmissions = (assignmentId?: string) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [assignmentId]);
 
   const fetchMySubmission = async (assignmentId: string) => {
     const { data: userData } = await supabase.auth.getUser();
@@ -201,7 +204,7 @@ export const useSubmissions = (assignmentId?: string) => {
 
   useEffect(() => {
     fetchSubmissions();
-  }, [assignmentId]);
+  }, [fetchSubmissions]);
 
   return { 
     submissions, 

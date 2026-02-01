@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { email, password, full_name, role } = await req.json()
+    const { email, password, full_name, role, parent_id, create_parent, parent_email, parent_password, parent_name } = await req.json()
 
     // Validate inputs
     if (!email || !password || !full_name || !role) {
@@ -128,6 +128,67 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Handle parent-student linking for students
+    let parentInfo = null;
+    if (role === 'student') {
+      // If linking to existing parent
+      if (parent_id) {
+        const { error: linkError } = await supabaseAdmin
+          .from('parent_student_links')
+          .insert({
+            parent_id,
+            student_id: newUserId,
+            created_by: adminUserId,
+          })
+
+        if (linkError) {
+          console.error('Failed to link parent:', linkError)
+        }
+      }
+      // If creating new parent along with student
+      else if (create_parent && parent_email && parent_password && parent_name) {
+        // Create parent user
+        const { data: parentUserData, error: parentUserError } = await supabaseAdmin.auth.admin.createUser({
+          email: parent_email,
+          password: parent_password,
+          email_confirm: true,
+        })
+
+        if (parentUserError) {
+          // Don't fail the whole request, just log the error
+          console.error('Failed to create parent:', parentUserError)
+        } else {
+          const newParentId = parentUserData.user.id
+
+          // Create parent profile
+          await supabaseAdmin.from('profiles').insert({
+            user_id: newParentId,
+            full_name: parent_name,
+            email: parent_email,
+          })
+
+          // Assign parent role
+          await supabaseAdmin.from('user_roles').insert({
+            user_id: newParentId,
+            role: 'parent',
+          })
+
+          // Create link
+          await supabaseAdmin.from('parent_student_links').insert({
+            parent_id: newParentId,
+            student_id: newUserId,
+            created_by: adminUserId,
+          })
+
+          parentInfo = {
+            id: newParentId,
+            email: parent_email,
+            full_name: parent_name,
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -136,7 +197,8 @@ Deno.serve(async (req) => {
           email, 
           full_name, 
           role 
-        } 
+        },
+        parent: parentInfo
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

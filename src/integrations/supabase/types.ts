@@ -125,6 +125,30 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_student_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       plagiarism_reports: {
         Row: {
           analysis_details: string | null

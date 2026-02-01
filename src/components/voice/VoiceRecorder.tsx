@@ -1,0 +1,161 @@
+import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Mic, MicOff, RotateCcw, AlertCircle, Volume2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface VoiceRecorderProps {
+  onTranscriptChange: (transcript: string) => void;
+  initialTranscript?: string;
+  placeholder?: string;
+  className?: string;
+}
+
+export const VoiceRecorder = ({
+  onTranscriptChange,
+  initialTranscript = '',
+  placeholder = 'Click the microphone to start dictating...',
+  className,
+}: VoiceRecorderProps) => {
+  const {
+    isListening,
+    transcript,
+    interimTranscript,
+    error,
+    isSupported,
+    toggleListening,
+    resetTranscript,
+  } = useVoiceToText({
+    onResult: (text) => {
+      onTranscriptChange(text);
+    },
+  });
+
+  const displayText = transcript || initialTranscript;
+  const fullText = displayText + (interimTranscript ? ` ${interimTranscript}` : '');
+
+  const handleReset = () => {
+    resetTranscript();
+    onTranscriptChange('');
+  };
+
+  if (!isSupported) {
+    return (
+      <Card className={cn("border-destructive/50 bg-destructive/5", className)}>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 text-destructive">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Voice Input Not Supported</p>
+              <p className="text-sm text-muted-foreground">
+                Please use Chrome, Edge, or Safari for voice dictation.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={cn("overflow-hidden", className)}>
+      <CardContent className="p-0">
+        {/* Controls Header */}
+        <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={isListening ? "destructive" : "default"}
+              size="sm"
+              onClick={toggleListening}
+              className={cn(
+                "gap-2 transition-all",
+                isListening && "animate-pulse"
+              )}
+            >
+              {isListening ? (
+                <>
+                  <MicOff className="h-4 w-4" />
+                  Stop Recording
+                </>
+              ) : (
+                <>
+                  <Mic className="h-4 w-4" />
+                  Start Dictation
+                </>
+              )}
+            </Button>
+            
+            {displayText && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="gap-1 text-muted-foreground"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Clear
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isListening && (
+              <Badge variant="outline" className="gap-1 bg-destructive/10 text-destructive border-destructive/30">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                </span>
+                Recording
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Transcript Display */}
+        <div className="p-4 min-h-[120px]">
+          {fullText ? (
+            <div className="space-y-2">
+              <p className="text-foreground whitespace-pre-wrap">
+                {displayText}
+                {interimTranscript && (
+                  <span className="text-muted-foreground italic">
+                    {` ${interimTranscript}`}
+                  </span>
+                )}
+              </p>
+            </div>
+          ) : (
+            <p className="text-muted-foreground text-center py-4">
+              {isListening ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Volume2 className="h-4 w-4 animate-pulse" />
+                  Listening... Speak now
+                </span>
+              ) : (
+                placeholder
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="px-4 pb-4">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-destructive/10 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              {error}
+            </div>
+          </div>
+        )}
+
+        {/* Footer Info */}
+        <div className="px-4 pb-3 text-xs text-muted-foreground">
+          <p>💡 Tip: Speak clearly and pause briefly between sentences for best results.</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

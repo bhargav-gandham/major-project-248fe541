@@ -2,11 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Send, Loader2, Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Send, Loader2, Upload, FileText, AlertCircle, CheckCircle, Keyboard, Mic } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useSubmissions, Assignment } from '@/hooks/useAssignments';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { VoiceRecorder } from '@/components/voice/VoiceRecorder';
 
 interface SubmitAssignmentFormProps {
   assignment: Assignment;
@@ -21,6 +23,7 @@ const SubmitAssignmentForm: React.FC<SubmitAssignmentFormProps> = ({
 }) => {
   const { submitAssignment, fetchMySubmission, mySubmission } = useSubmissions();
   const [typedContent, setTypedContent] = useState('');
+  const [inputMode, setInputMode] = useState<'type' | 'voice'>('type');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [existingSubmission, setExistingSubmission] = useState<any>(null);
@@ -161,21 +164,55 @@ const SubmitAssignmentForm: React.FC<SubmitAssignmentFormProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="answer">Your Answer (Type Only - No Paste Allowed)</Label>
-            <textarea
-              ref={textareaRef}
-              id="answer"
-              className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
-              placeholder="Type your answer here. Pasting is disabled to ensure original work..."
-              value={typedContent}
-              onChange={(e) => setTypedContent(e.target.value)}
-              onPaste={handlePaste}
-              onDrop={handleDrop}
-              onDragOver={(e) => e.preventDefault()}
-            />
-            <p className="text-xs text-muted-foreground">
-              Characters typed: {typedContent.length}
-            </p>
+            <Label>Your Answer</Label>
+            <Tabs value={inputMode} onValueChange={(v) => setInputMode(v as 'type' | 'voice')} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="type" className="gap-2">
+                  <Keyboard className="h-4 w-4" />
+                  Type Answer
+                </TabsTrigger>
+                <TabsTrigger value="voice" className="gap-2">
+                  <Mic className="h-4 w-4" />
+                  Voice Dictation
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="type" className="mt-0">
+                <textarea
+                  ref={textareaRef}
+                  id="answer"
+                  className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+                  placeholder="Type your answer here. Pasting is disabled to ensure original work..."
+                  value={typedContent}
+                  onChange={(e) => setTypedContent(e.target.value)}
+                  onPaste={handlePaste}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Characters typed: {typedContent.length}
+                </p>
+              </TabsContent>
+              
+              <TabsContent value="voice" className="mt-0">
+                <VoiceRecorder
+                  onTranscriptChange={setTypedContent}
+                  initialTranscript={typedContent}
+                  placeholder="Click the microphone button and start speaking your answer..."
+                />
+                <div className="mt-2 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Preview of your answer:</strong>
+                  </p>
+                  <p className="text-sm mt-1 whitespace-pre-wrap">
+                    {typedContent || <span className="text-muted-foreground italic">No content yet...</span>}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Characters: {typedContent.length}
+                  </p>
+                </div>
+              </TabsContent>
+            </Tabs>
           </div>
 
           <div className="space-y-2">

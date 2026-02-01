@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      grades: {
+        Row: {
+          created_at: string
+          created_by: string
+          credits: number
+          grade_letter: string
+          grade_points: number
+          id: string
+          remarks: string | null
+          semester: string
+          student_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          credits?: number
+          grade_letter: string
+          grade_points: number
+          id?: string
+          remarks?: string | null
+          semester: string
+          student_id: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          credits?: number
+          grade_letter?: string
+          grade_points?: number
+          id?: string
+          remarks?: string | null
+          semester?: string
+          student_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           content: string

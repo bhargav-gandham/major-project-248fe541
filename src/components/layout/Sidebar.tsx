@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'assignments', label: 'Assignments', icon: FileText },
           { id: 'submissions', label: 'Submissions', icon: ClipboardCheck },
+          { id: 'grades', label: 'Grade Book', icon: BarChart3 },
           { id: 'notes', label: 'Study Notes', icon: BookOpen },
           { id: 'integrity', label: 'Academic Integrity', icon: Shield },
           { id: 'students', label: 'Students', icon: Users },

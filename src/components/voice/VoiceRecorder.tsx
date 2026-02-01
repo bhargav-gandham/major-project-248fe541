@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useVoiceToText } from '@/hooks/useVoiceToText';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -29,9 +30,18 @@ export const VoiceRecorder = ({
   } = useVoiceToText({
     initialValue: initialTranscript,
     onResult: (text) => {
+      console.log('[VoiceRecorder] onResult called with:', text);
       onTranscriptChange(text);
     },
   });
+
+  // Update parent with combined final + interim text for real-time feedback
+  useEffect(() => {
+    const combinedText = transcript + (interimTranscript ? ' ' + interimTranscript : '');
+    if (combinedText !== initialTranscript) {
+      onTranscriptChange(combinedText.trim());
+    }
+  }, [transcript, interimTranscript]);
 
   const displayText = transcript;
   const fullText = displayText + (interimTranscript ? ` ${interimTranscript}` : '');

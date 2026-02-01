@@ -70,6 +70,19 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const finalTranscriptRef = useRef(initialValue);
+  
+  // Use refs for callbacks to avoid recreating recognition on every render
+  const onResultRef = useRef(onResult);
+  const onErrorRef = useRef(onError);
+  
+  // Keep refs updated with latest callbacks
+  useEffect(() => {
+    onResultRef.current = onResult;
+  }, [onResult]);
+  
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
 
   // Sync with external value changes
   useEffect(() => {
@@ -79,6 +92,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     }
   }, [initialValue, isListening]);
 
+  // Initialize speech recognition once
   useEffect(() => {
     // Check for browser support
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -95,15 +109,18 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     recognition.lang = language;
 
     recognition.onstart = () => {
+      console.log('[Voice] Recognition started');
       setIsListening(true);
       setError(null);
     };
 
     recognition.onend = () => {
+      console.log('[Voice] Recognition ended');
       setIsListening(false);
     };
 
     recognition.onerror = (event) => {
+      console.log('[Voice] Recognition error:', event.error);
       const errorMessages: Record<string, string> = {
         'not-allowed': 'Microphone access denied. Please allow microphone access.',
         'no-speech': 'No speech detected. Please try again.',
@@ -114,58 +131,73 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
       
       const message = errorMessages[event.error] || `Speech recognition error: ${event.error}`;
       setError(message);
-      onError?.(message);
+      onErrorRef.current?.(message);
       setIsListening(false);
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
+      console.log('[Voice] Got result:', event.results);
       let interimText = '';
       let finalText = finalTranscriptRef.current;
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+        const transcriptText = result[0].transcript;
+        console.log('[Voice] Transcript:', transcriptText, 'isFinal:', result.isFinal);
+        
         if (result.isFinal) {
-          finalText += result[0].transcript + ' ';
+          finalText += transcriptText + ' ';
           finalTranscriptRef.current = finalText;
         } else {
-          interimText += result[0].transcript;
+          interimText += transcriptText;
         }
       }
 
+      console.log('[Voice] Setting transcript:', finalText.trim());
+      console.log('[Voice] Setting interim:', interimText);
+      
       setTranscript(finalText.trim());
       setInterimTranscript(interimText);
       
-      if (finalText.trim()) {
-        onResult?.(finalText.trim());
-      }
+      // Call callback with current transcript (use ref to get latest callback)
+      onResultRef.current?.(finalText.trim() || interimText);
     };
 
     recognitionRef.current = recognition;
 
     return () => {
+      console.log('[Voice] Cleaning up recognition');
       recognition.abort();
     };
-  }, [continuous, interimResults, language, onResult, onError]);
+  }, [continuous, interimResults, language]); // Removed onResult and onError from deps
 
   const startListening = useCallback(async () => {
-    if (!recognitionRef.current || !isSupported) return;
+    if (!recognitionRef.current || !isSupported) {
+      console.log('[Voice] Cannot start - not supported or no recognition');
+      return;
+    }
 
     try {
+      console.log('[Voice] Requesting microphone permission...');
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('[Voice] Microphone permission granted');
       
       finalTranscriptRef.current = transcript; // Preserve existing transcript
       setError(null);
+      console.log('[Voice] Starting recognition...');
       recognitionRef.current.start();
     } catch (err) {
+      console.log('[Voice] Microphone permission denied:', err);
       const message = 'Microphone access denied. Please allow microphone access in your browser settings.';
       setError(message);
-      onError?.(message);
+      onErrorRef.current?.(message);
     }
-  }, [isSupported, transcript, onError]);
+  }, [isSupported, transcript]);
 
   const stopListening = useCallback(() => {
     if (!recognitionRef.current) return;
+    console.log('[Voice] Stopping recognition...');
     recognitionRef.current.stop();
   }, []);
 

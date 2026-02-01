@@ -96,7 +96,7 @@ Provide your analysis in the following JSON format:
   "analysis_details": "<detailed explanation of findings, specific phrases that match, and overall assessment>"
 }`;
 
-    // Call Lovable AI
+    // Call Lovable AI with temperature 0 for consistent results
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -109,6 +109,8 @@ Provide your analysis in the following JSON format:
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
+        temperature: 0,
+        seed: 42,
       }),
     });
 

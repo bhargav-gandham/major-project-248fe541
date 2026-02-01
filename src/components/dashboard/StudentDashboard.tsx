@@ -3,6 +3,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import SubmitAssignmentForm from '@/components/student/SubmitAssignmentForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { StudentGrades } from '@/components/grades/StudentGrades';
+import LearningPathCard from '@/components/learning/LearningPathCard';
 import { useAssignments, useSubmissions, Assignment } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2, BookOpen } from 'lucide-react';
@@ -193,6 +194,9 @@ const StudentDashboard: React.FC = () => {
               <Progress value={submissionRate} className="mt-4 h-2" />
             </CardContent>
           </Card>
+
+          {/* AI-Powered Learning Path Recommendations */}
+          <LearningPathCard />
 
           <Card>
             <CardHeader>

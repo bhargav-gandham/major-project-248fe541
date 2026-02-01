@@ -9,7 +9,8 @@ import { GradeBook } from '@/components/grades/GradeBook';
 import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { usePlagiarismCheck, PlagiarismReport } from '@/hooks/usePlagiarismCheck';
-import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search, Brain } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search, Brain, Users, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
+interface StudentProfile {
+  user_id: string;
+  full_name: string;
+  email: string;
+  created_at: string;
+}
+
 const FacultyDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { assignments, isLoading, deleteAssignment, fetchAssignments } = useAssignments();
@@ -51,6 +59,10 @@ const FacultyDashboard: React.FC = () => {
   const [isGrading, setIsGrading] = useState(false);
   const [plagiarismReports, setPlagiarismReports] = useState<Record<string, PlagiarismReport>>({});
   const [allReports, setAllReports] = useState<PlagiarismReport[]>([]);
+  
+  // Students state
+  const [students, setStudents] = useState<StudentProfile[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -64,6 +76,45 @@ const FacultyDashboard: React.FC = () => {
     };
     loadReports();
   }, [submissions]);
+
+  // Fetch students when tab is active
+  useEffect(() => {
+    if (activeTab === 'students') {
+      const fetchStudents = async () => {
+        setStudentsLoading(true);
+        try {
+          // Get all student user_ids from user_roles
+          const { data: studentRoles, error: rolesError } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'student');
+          
+          if (rolesError) throw rolesError;
+          
+          if (studentRoles && studentRoles.length > 0) {
+            const studentIds = studentRoles.map(r => r.user_id);
+            
+            // Get profiles for these students
+            const { data: profiles, error: profilesError } = await supabase
+              .from('profiles')
+              .select('user_id, full_name, email, created_at')
+              .in('user_id', studentIds);
+            
+            if (profilesError) throw profilesError;
+            setStudents(profiles || []);
+          } else {
+            setStudents([]);
+          }
+        } catch (error) {
+          console.error('Error fetching students:', error);
+          setStudents([]);
+        } finally {
+          setStudentsLoading(false);
+        }
+      };
+      fetchStudents();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (activeTab === 'submissions') {
@@ -90,6 +141,7 @@ const FacultyDashboard: React.FC = () => {
       case 'grades': return 'Grade Book';
       case 'notes': return 'Study Notes';
       case 'integrity': return 'Academic Integrity';
+      case 'students': return 'Students';
       default: return 'Dashboard';
     }
   };
@@ -538,6 +590,79 @@ const FacultyDashboard: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'students' && (
+        <div className="space-y-6 animate-fade-in">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Student Directory</h3>
+                  <p className="text-sm text-muted-foreground">
+                    View all enrolled students and their information
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                All Students ({students.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {studentsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                </div>
+              ) : students.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No students enrolled yet.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Submissions</TableHead>
+                      <TableHead>Joined</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((student) => {
+                      const studentSubmissions = submissions.filter(s => s.student_id === student.user_id);
+                      return (
+                        <TableRow key={student.user_id}>
+                          <TableCell className="font-medium">{student.full_name}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="w-4 h-4" />
+                              {student.email}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {studentSubmissions.length} submitted
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {new Date(student.created_at).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 

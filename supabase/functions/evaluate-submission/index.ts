@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
@@ -7,33 +7,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Extract text from different file types
-async function extractTextFromFile(fileUrl: string): Promise<string | null> {
+// Parse storage path from URL
+function parseStoragePath(fileUrl: string): { bucket: string; path: string } | null {
   try {
-    const response = await fetch(fileUrl);
-    if (!response.ok) {
-      console.error("Failed to fetch file:", response.status);
+    // URL format: https://xxx.supabase.co/storage/v1/object/public/bucket/path/to/file
+    const url = new URL(fileUrl);
+    const pathParts = url.pathname.split('/');
+    // Find index after 'object' and 'public' or 'authenticated'
+    const objectIndex = pathParts.indexOf('object');
+    if (objectIndex === -1) return null;
+    
+    const bucket = pathParts[objectIndex + 2]; // Skip 'public' or 'authenticated'
+    const path = pathParts.slice(objectIndex + 3).join('/');
+    return { bucket, path };
+  } catch {
+    return null;
+  }
+}
+
+// Extract text from different file types using Supabase storage
+async function extractTextFromFile(supabase: SupabaseClient, fileUrl: string): Promise<string | null> {
+  try {
+    const parsed = parseStoragePath(fileUrl);
+    if (!parsed) {
+      console.error("Could not parse storage path from URL:", fileUrl);
       return null;
     }
 
-    const fileName = fileUrl.split('/').pop()?.toLowerCase() || '';
+    console.log("Downloading from bucket:", parsed.bucket, "path:", parsed.path);
+    
+    const { data, error } = await supabase.storage
+      .from(parsed.bucket)
+      .download(parsed.path);
+
+    if (error || !data) {
+      console.error("Failed to download file:", error);
+      return null;
+    }
+
+    const fileName = parsed.path.toLowerCase();
     
     // Handle .txt files
     if (fileName.endsWith('.txt')) {
-      return await response.text();
+      return await data.text();
     }
     
     // Handle .docx files
     if (fileName.endsWith('.docx')) {
-      const arrayBuffer = await response.arrayBuffer();
+      const arrayBuffer = await data.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
       return result.value;
     }
     
-    // Handle .pdf files - basic extraction
+    // Handle .pdf files - not supported
     if (fileName.endsWith('.pdf')) {
-      // PDF text extraction is limited in edge functions
-      // Return a message indicating PDF support is limited
       return null;
     }
     
@@ -130,7 +157,7 @@ serve(async (req) => {
     
     if (!studentContent.trim() && submission.file_url) {
       console.log("Extracting text from file:", submission.file_url);
-      const extractedText = await extractTextFromFile(submission.file_url);
+      const extractedText = await extractTextFromFile(supabase, submission.file_url);
       if (extractedText) {
         studentContent = extractedText;
       } else {

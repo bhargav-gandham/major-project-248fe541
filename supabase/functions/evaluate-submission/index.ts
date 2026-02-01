@@ -1,10 +1,53 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Extract text from different file types
+async function extractTextFromFile(fileUrl: string): Promise<string | null> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) {
+      console.error("Failed to fetch file:", response.status);
+      return null;
+    }
+
+    const fileName = fileUrl.split('/').pop()?.toLowerCase() || '';
+    
+    // Handle .txt files
+    if (fileName.endsWith('.txt')) {
+      return await response.text();
+    }
+    
+    // Handle .docx files
+    if (fileName.endsWith('.docx')) {
+      const arrayBuffer = await response.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      return result.value;
+    }
+    
+    // Handle .pdf files - basic extraction
+    if (fileName.endsWith('.pdf')) {
+      // PDF text extraction is limited in edge functions
+      // Return a message indicating PDF support is limited
+      return null;
+    }
+    
+    // Handle .doc files (older format) - not supported
+    if (fileName.endsWith('.doc')) {
+      return null;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error extracting text from file:", error);
+    return null;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -81,7 +124,29 @@ serve(async (req) => {
     }
 
     const assignment = submission.assignments;
-    const studentContent = submission.typed_content || "";
+    
+    // Get content from typed content or extract from file
+    let studentContent = submission.typed_content || "";
+    
+    if (!studentContent.trim() && submission.file_url) {
+      console.log("Extracting text from file:", submission.file_url);
+      const extractedText = await extractTextFromFile(submission.file_url);
+      if (extractedText) {
+        studentContent = extractedText;
+      } else {
+        const fileName = submission.file_url.split('/').pop()?.toLowerCase() || '';
+        if (fileName.endsWith('.pdf')) {
+          return new Response(JSON.stringify({ error: "PDF text extraction is not supported. Please ask the student to submit as .docx or typed text." }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify({ error: "Could not extract text from the uploaded file. Supported formats: .txt, .docx" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     if (!studentContent.trim()) {
       return new Response(JSON.stringify({ error: "No content to evaluate in this submission" }), {

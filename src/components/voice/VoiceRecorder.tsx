@@ -27,12 +27,13 @@ export const VoiceRecorder = ({
     toggleListening,
     resetTranscript,
   } = useVoiceToText({
+    initialValue: initialTranscript,
     onResult: (text) => {
       onTranscriptChange(text);
     },
   });
 
-  const displayText = transcript || initialTranscript;
+  const displayText = transcript;
   const fullText = displayText + (interimTranscript ? ` ${interimTranscript}` : '');
 
   const handleReset = () => {

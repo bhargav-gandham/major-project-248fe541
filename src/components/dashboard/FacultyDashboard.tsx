@@ -4,11 +4,12 @@ import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
 import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { PlagiarismReportCard } from '@/components/faculty/PlagiarismReportCard';
+import SubmissionEvaluationCard from '@/components/faculty/SubmissionEvaluationCard';
 import { GradeBook } from '@/components/grades/GradeBook';
 import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { usePlagiarismCheck, PlagiarismReport } from '@/hooks/usePlagiarismCheck';
-import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search } from 'lucide-react';
+import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -541,7 +542,7 @@ const FacultyDashboard: React.FC = () => {
       )}
 
       <Dialog open={!!gradingSubmission} onOpenChange={() => setGradingSubmission(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Grade Submission</DialogTitle>
           </DialogHeader>
@@ -567,6 +568,16 @@ const FacultyDashboard: React.FC = () => {
                 </a>
               </div>
             )}
+
+            {/* AI Evaluation Section */}
+            {gradingSubmission?.typed_content && (
+              <SubmissionEvaluationCard
+                submissionId={gradingSubmission.id}
+                maxScore={assignments.find(a => a.id === gradingSubmission.assignment_id)?.max_score || 100}
+                onScoreSuggested={(score) => setGradeScore(score.toString())}
+              />
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="score">Score</Label>
               <Input

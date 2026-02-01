@@ -4,6 +4,7 @@ interface UseVoiceToTextOptions {
   continuous?: boolean;
   interimResults?: boolean;
   language?: string;
+  initialValue?: string;
   onResult?: (transcript: string) => void;
   onError?: (error: string) => void;
 }
@@ -56,18 +57,27 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     continuous = true,
     interimResults = true,
     language = 'en-US',
+    initialValue = '',
     onResult,
     onError,
   } = options;
 
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState('');
+  const [transcript, setTranscript] = useState(initialValue);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(true);
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const finalTranscriptRef = useRef('');
+  const finalTranscriptRef = useRef(initialValue);
+
+  // Sync with external value changes
+  useEffect(() => {
+    if (!isListening) {
+      setTranscript(initialValue);
+      finalTranscriptRef.current = initialValue;
+    }
+  }, [initialValue, isListening]);
 
   useEffect(() => {
     // Check for browser support

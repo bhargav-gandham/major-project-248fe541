@@ -569,8 +569,8 @@ const FacultyDashboard: React.FC = () => {
               </div>
             )}
 
-            {/* AI Evaluation Section */}
-            {gradingSubmission?.typed_content && (
+            {/* AI Evaluation Section - works with typed content or file uploads */}
+            {(gradingSubmission?.typed_content || gradingSubmission?.file_url) && (
               <SubmissionEvaluationCard
                 submissionId={gradingSubmission.id}
                 maxScore={assignments.find(a => a.id === gradingSubmission.assignment_id)?.max_score || 100}

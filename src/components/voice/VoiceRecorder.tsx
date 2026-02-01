@@ -125,29 +125,18 @@ export const VoiceRecorder = ({
           </div>
         </div>
 
-        {/* Transcript Display */}
-        <div className="p-4 min-h-[120px]">
-          {fullText ? (
-            <div className="space-y-2">
-              <p className="text-foreground whitespace-pre-wrap">
-                {displayText}
-                {interimTranscript && (
-                  <span className="text-muted-foreground italic">
-                    {` ${interimTranscript}`}
-                  </span>
-                )}
-              </p>
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">
-              {isListening ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Volume2 className="h-4 w-4 animate-pulse" />
-                  Listening... Speak now
-                </span>
-              ) : (
-                placeholder
-              )}
+        {/* Editable Transcript */}
+        <div className="p-4">
+          <textarea
+            className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
+            placeholder={isListening ? "Listening... Speak now" : placeholder}
+            value={fullText}
+            onChange={(e) => onTranscriptChange(e.target.value)}
+            disabled={isListening}
+          />
+          {isListening && interimTranscript && (
+            <p className="text-sm text-muted-foreground italic mt-2">
+              Hearing: {interimTranscript}
             </p>
           )}
         </div>

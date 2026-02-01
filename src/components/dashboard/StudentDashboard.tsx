@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SubmitAssignmentForm from '@/components/student/SubmitAssignmentForm';
 import { NoteCard } from '@/components/notes/NoteCard';
+import { StudentGrades } from '@/components/grades/StudentGrades';
 import { useAssignments, useSubmissions, Assignment } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2, BookOpen } from 'lucide-react';
@@ -352,50 +353,11 @@ const StudentDashboard: React.FC = () => {
       )}
 
       {activeTab === 'grades' && (
-        <div className="space-y-6 animate-fade-in">
-          {gradedSubmissions.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                No grades available yet. Submit your assignments to receive grades.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {assignments.map((assignment) => {
-                const submission = mySubmissions[assignment.id];
-                if (!submission || submission.score === null) return null;
-
-                const percentage = (submission.score / assignment.max_score) * 100;
-                
-                return (
-                  <Card key={assignment.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{assignment.title}</h3>
-                          <p className="text-sm text-muted-foreground">{assignment.subject}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">{submission.score}/{assignment.max_score}</p>
-                          <p className={`text-sm ${percentage >= 50 ? 'text-success' : 'text-destructive'}`}>
-                            {percentage.toFixed(0)}%
-                          </p>
-                        </div>
-                      </div>
-                      {submission.feedback && (
-                        <div className="mt-3 p-3 bg-muted rounded-lg">
-                          <p className="text-sm font-medium">Teacher's Feedback:</p>
-                          <p className="text-sm text-muted-foreground">{submission.feedback}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
+        <div className="animate-fade-in">
+          <StudentGrades />
         </div>
       )}
+
 
       {activeTab === 'notes' && (
         <div className="space-y-6 animate-fade-in">

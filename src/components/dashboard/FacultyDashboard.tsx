@@ -4,6 +4,7 @@ import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
 import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { PlagiarismReportCard } from '@/components/faculty/PlagiarismReportCard';
+import { GradeBook } from '@/components/grades/GradeBook';
 import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { usePlagiarismCheck, PlagiarismReport } from '@/hooks/usePlagiarismCheck';
@@ -85,6 +86,7 @@ const FacultyDashboard: React.FC = () => {
       case 'dashboard': return 'Faculty Dashboard';
       case 'assignments': return 'Manage Assignments';
       case 'submissions': return 'Student Submissions';
+      case 'grades': return 'Grade Book';
       case 'notes': return 'Study Notes';
       case 'integrity': return 'Academic Integrity';
       default: return 'Dashboard';
@@ -414,6 +416,12 @@ const FacultyDashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === 'grades' && (
+        <div className="animate-fade-in">
+          <GradeBook />
         </div>
       )}
 

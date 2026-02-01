@@ -2,3 +2,6 @@ project_id = "rmpnrbdicjlfgphbdvmh"
 
 [functions.learning-path]
 verify_jwt = false
+
+[functions.evaluate-submission]
+verify_jwt = false

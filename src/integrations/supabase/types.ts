@@ -193,6 +193,56 @@ export type Database = {
         }
         Relationships: []
       }
+      submission_evaluations: {
+        Row: {
+          answer_correctness: number
+          detailed_feedback: string | null
+          evaluated_at: string
+          evaluated_by: string | null
+          follows_instructions: boolean
+          id: string
+          improvements: string[] | null
+          instruction_score: number
+          strengths: string[] | null
+          submission_id: string
+          suggested_score: number | null
+        }
+        Insert: {
+          answer_correctness?: number
+          detailed_feedback?: string | null
+          evaluated_at?: string
+          evaluated_by?: string | null
+          follows_instructions?: boolean
+          id?: string
+          improvements?: string[] | null
+          instruction_score?: number
+          strengths?: string[] | null
+          submission_id: string
+          suggested_score?: number | null
+        }
+        Update: {
+          answer_correctness?: number
+          detailed_feedback?: string | null
+          evaluated_at?: string
+          evaluated_by?: string | null
+          follows_instructions?: boolean
+          id?: string
+          improvements?: string[] | null
+          instruction_score?: number
+          strengths?: string[] | null
+          submission_id?: string
+          suggested_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_evaluations_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       submissions: {
         Row: {
           assignment_id: string

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, RotateCcw, AlertCircle, Volume2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface VoiceRecorderProps {
   onTranscriptChange: (transcript: string) => void;
@@ -132,6 +133,15 @@ export const VoiceRecorder = ({
             placeholder={isListening ? "Listening... Speak now" : placeholder}
             value={fullText}
             onChange={(e) => onTranscriptChange(e.target.value)}
+            onPaste={(e) => {
+              e.preventDefault();
+              toast.error('Pasting is not allowed. Please use voice dictation or type manually.');
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              toast.error('Drag and drop is not allowed. Please use voice dictation or type manually.');
+            }}
+            onDragOver={(e) => e.preventDefault()}
             disabled={isListening}
           />
           {isListening && interimTranscript && (

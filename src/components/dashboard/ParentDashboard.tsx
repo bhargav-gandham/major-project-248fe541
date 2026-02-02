@@ -2,18 +2,21 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { GraduationCap, Award, FileText, Loader2, UserX } from 'lucide-react';
+import { 
+  GraduationCap, 
+  Award, 
+  FileText, 
+  Loader2, 
+  UserX, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle,
+  TrendingUp,
+  TrendingDown,
+  Star
+} from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface LinkedStudent {
   user_id: string;
@@ -41,6 +44,22 @@ interface StudentSubmission {
   max_score?: number;
 }
 
+// Simple grade to performance mapping
+const getGradeStatus = (grade: string) => {
+  if (grade.startsWith('A')) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-100', icon: Star };
+  if (grade.startsWith('B')) return { label: 'Good', color: 'text-blue-600', bg: 'bg-blue-100', icon: TrendingUp };
+  if (grade.startsWith('C')) return { label: 'Average', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: CheckCircle2 };
+  if (grade.startsWith('D')) return { label: 'Needs Work', color: 'text-orange-600', bg: 'bg-orange-100', icon: TrendingDown };
+  return { label: 'Failing', color: 'text-red-600', bg: 'bg-red-100', icon: AlertCircle };
+};
+
+const getGPAMessage = (gpa: number) => {
+  if (gpa >= 3.5) return { message: "🌟 Excellent! Your child is doing great!", color: 'text-green-600' };
+  if (gpa >= 3.0) return { message: "👍 Good job! Keep it up!", color: 'text-blue-600' };
+  if (gpa >= 2.0) return { message: "📚 Satisfactory. Some improvement needed.", color: 'text-yellow-600' };
+  return { message: "⚠️ Needs attention. Please meet with teachers.", color: 'text-red-600' };
+};
+
 const ParentDashboard: React.FC = () => {
   const { user } = useAuth();
   const [linkedStudents, setLinkedStudents] = useState<LinkedStudent[]>([]);
@@ -56,7 +75,6 @@ const ParentDashboard: React.FC = () => {
       
       setIsLoading(true);
       try {
-        // Get student IDs linked to this parent
         const { data: links, error: linksError } = await supabase
           .from('parent_student_links')
           .select('student_id')
@@ -67,7 +85,6 @@ const ParentDashboard: React.FC = () => {
         if (links && links.length > 0) {
           const studentIds = links.map(l => l.student_id);
           
-          // Get student profiles
           const { data: profiles, error: profilesError } = await supabase
             .from('profiles')
             .select('user_id, full_name, email')
@@ -98,7 +115,6 @@ const ParentDashboard: React.FC = () => {
       if (!selectedStudent) return;
 
       try {
-        // Fetch grades
         const { data: gradesData } = await supabase
           .from('grades')
           .select('*')
@@ -107,7 +123,6 @@ const ParentDashboard: React.FC = () => {
 
         setGrades(gradesData || []);
 
-        // Fetch submissions with assignment details
         const { data: submissionsData } = await supabase
           .from('submissions')
           .select('*')
@@ -115,7 +130,6 @@ const ParentDashboard: React.FC = () => {
           .order('submitted_at', { ascending: false });
 
         if (submissionsData && submissionsData.length > 0) {
-          // Get assignment details
           const assignmentIds = [...new Set(submissionsData.map(s => s.assignment_id))];
           const { data: assignments } = await supabase
             .from('assignments')
@@ -148,28 +162,24 @@ const ParentDashboard: React.FC = () => {
     if (grades.length === 0) return 0;
     const totalPoints = grades.reduce((sum, g) => sum + (g.grade_points * g.credits), 0);
     const totalCredits = grades.reduce((sum, g) => sum + g.credits, 0);
-    return totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : '0.00';
+    return totalCredits > 0 ? totalPoints / totalCredits : 0;
   };
 
-  // Calculate submission stats
-  const submissionStats = {
-    total: submissions.length,
-    graded: submissions.filter(s => s.score !== null).length,
-    avgScore: submissions.filter(s => s.score !== null).length > 0
-      ? (submissions.filter(s => s.score !== null).reduce((sum, s) => sum + (s.score || 0), 0) / 
-         submissions.filter(s => s.score !== null).length).toFixed(1)
-      : '0',
-  };
+  const gpa = calculateGPA();
+  const gpaMessage = getGPAMessage(gpa);
+  const gpaPercentage = (gpa / 4) * 100;
+
+  // Simple stats
+  const totalAssignments = submissions.length;
+  const completedOnTime = submissions.filter(s => !s.is_late).length;
+  const lateSubmissions = submissions.filter(s => s.is_late).length;
 
   if (isLoading) {
     return (
-      <DashboardLayout
-        activeTab="dashboard"
-        onTabChange={() => {}}
-        title="Parent Dashboard"
-      >
+      <DashboardLayout activeTab="dashboard" onTabChange={() => {}} title="My Child's Progress">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <span className="ml-4 text-xl text-muted-foreground">Loading...</span>
         </div>
       </DashboardLayout>
     );
@@ -177,17 +187,14 @@ const ParentDashboard: React.FC = () => {
 
   if (linkedStudents.length === 0) {
     return (
-      <DashboardLayout
-        activeTab="dashboard"
-        onTabChange={() => {}}
-        title="Parent Dashboard"
-      >
-        <Card className="border-dashed">
-          <CardContent className="py-12 text-center">
-            <UserX className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Students Linked</h3>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Your account is not linked to any student yet. Please contact the administrator to link your child's account.
+      <DashboardLayout activeTab="dashboard" onTabChange={() => {}} title="My Child's Progress">
+        <Card className="border-2 border-dashed border-muted">
+          <CardContent className="py-16 text-center">
+            <UserX className="w-20 h-20 mx-auto mb-6 text-muted-foreground" />
+            <h3 className="text-2xl font-bold mb-4">No Child Connected</h3>
+            <p className="text-lg text-muted-foreground max-w-md mx-auto">
+              Your account is not connected to any student yet. 
+              Please contact the school administrator to link your child's account.
             </p>
           </CardContent>
         </Card>
@@ -199,189 +206,210 @@ const ParentDashboard: React.FC = () => {
     <DashboardLayout
       activeTab="dashboard"
       onTabChange={() => {}}
-      title="Parent Dashboard"
-      subtitle={`Monitoring ${selectedStudent?.full_name}'s academic progress`}
+      title="My Child's Progress"
+      subtitle={`Viewing ${selectedStudent?.full_name}'s school performance`}
     >
-      <div className="space-y-6 animate-fade-in">
-        {/* Student Selector (if multiple children) */}
+      <div className="space-y-8 animate-fade-in">
+        {/* Child Selector - Only show if multiple children */}
         {linkedStudents.length > 1 && (
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-muted-foreground">Viewing:</span>
-                <div className="flex gap-2">
-                  {linkedStudents.map((student) => (
-                    <button
-                      key={student.user_id}
-                      onClick={() => setSelectedStudent(student)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        selectedStudent?.user_id === student.user_id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted hover:bg-muted/80'
-                      }`}
-                    >
-                      {student.full_name}
-                    </button>
-                  ))}
-                </div>
+          <Card className="border-2 border-primary/20">
+            <CardContent className="p-6">
+              <p className="text-lg font-semibold mb-4">Select Child:</p>
+              <div className="flex flex-wrap gap-3">
+                {linkedStudents.map((student) => (
+                  <button
+                    key={student.user_id}
+                    onClick={() => setSelectedStudent(student)}
+                    className={`px-6 py-3 rounded-xl text-lg font-semibold transition-all ${
+                      selectedStudent?.user_id === student.user_id
+                        ? 'bg-primary text-primary-foreground shadow-lg scale-105'
+                        : 'bg-muted hover:bg-muted/80'
+                    }`}
+                  >
+                    {student.full_name}
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Student Info Card */}
-        <Card className="border-l-4 border-l-accent">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full gradient-accent flex items-center justify-center text-2xl font-bold text-accent-foreground">
+        {/* Main Performance Card - Simple and Clear */}
+        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-background">
+          <CardContent className="p-8">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Student Avatar */}
+              <div className="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-4xl font-bold text-primary-foreground shadow-lg">
                 {selectedStudent?.full_name.charAt(0)}
               </div>
-              <div>
-                <h2 className="text-xl font-display font-bold text-foreground">{selectedStudent?.full_name}</h2>
-                <p className="text-muted-foreground">{selectedStudent?.email}</p>
+              
+              {/* Student Name */}
+              <div className="text-center md:text-left flex-1">
+                <h2 className="text-3xl font-bold text-foreground">{selectedStudent?.full_name}</h2>
+                <p className="text-lg text-muted-foreground mt-1">Student</p>
               </div>
-              <div className="ml-auto text-right">
-                <div className="flex items-center gap-2">
-                  <Award className="w-6 h-6 text-accent" />
-                  <p className="text-3xl font-display font-bold text-foreground">{calculateGPA()}</p>
+
+              {/* Overall Score - Big and Clear */}
+              <div className="text-center p-6 rounded-2xl bg-card shadow-lg border">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Award className="w-8 h-8 text-primary" />
+                  <span className="text-5xl font-bold text-foreground">{gpa.toFixed(1)}</span>
+                  <span className="text-2xl text-muted-foreground">/4.0</span>
                 </div>
-                <p className="text-sm text-muted-foreground">GPA</p>
+                <p className="text-lg font-medium text-muted-foreground">Overall Score</p>
+                <Progress value={gpaPercentage} className="mt-3 h-3" />
               </div>
+            </div>
+
+            {/* Simple Message */}
+            <div className={`mt-6 p-4 rounded-xl bg-card border-2 text-center ${gpaMessage.color}`}>
+              <p className="text-xl font-semibold">{gpaMessage.message}</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{submissionStats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total Submissions</p>
-                </div>
+        {/* Quick Stats - Very Simple */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-2 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-blue-600" />
               </div>
+              <p className="text-4xl font-bold text-foreground">{totalAssignments}</p>
+              <p className="text-lg text-muted-foreground mt-2">Total Homework</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                  <Award className="w-6 h-6 text-success" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{submissionStats.graded}</p>
-                  <p className="text-sm text-muted-foreground">Graded</p>
-                </div>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
+              <p className="text-4xl font-bold text-green-600">{completedOnTime}</p>
+              <p className="text-lg text-muted-foreground mt-2">On Time ✓</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{submissionStats.avgScore}%</p>
-                  <p className="text-sm text-muted-foreground">Avg Score</p>
-                </div>
+
+          <Card className="border-2 hover:shadow-lg transition-shadow">
+            <CardContent className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-orange-100 flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-orange-600" />
               </div>
+              <p className="text-4xl font-bold text-orange-600">{lateSubmissions}</p>
+              <p className="text-lg text-muted-foreground mt-2">Late ⚠️</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Grades Table */}
+        {/* Subject Grades - Simple Cards */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <GraduationCap className="w-8 h-8 text-primary" />
               Subject Grades
             </CardTitle>
           </CardHeader>
           <CardContent>
             {grades.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No grades recorded yet.</p>
+              <div className="text-center py-12">
+                <GraduationCap className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <p className="text-xl text-muted-foreground">No grades yet</p>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Semester</TableHead>
-                    <TableHead>Grade</TableHead>
-                    <TableHead>Points</TableHead>
-                    <TableHead>Credits</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {grades.map((grade) => (
-                    <TableRow key={grade.id}>
-                      <TableCell className="font-medium">{grade.subject}</TableCell>
-                      <TableCell>{grade.semester}</TableCell>
-                      <TableCell>
-                        <Badge variant={grade.grade_letter.startsWith('A') ? 'default' : 'secondary'}>
-                          {grade.grade_letter}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{grade.grade_points}</TableCell>
-                      <TableCell>{grade.credits}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {grades.map((grade) => {
+                  const status = getGradeStatus(grade.grade_letter);
+                  const IconComponent = status.icon;
+                  return (
+                    <div 
+                      key={grade.id} 
+                      className={`p-5 rounded-xl border-2 ${status.bg} transition-all hover:scale-102 hover:shadow-md`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-lg font-bold text-foreground">{grade.subject}</span>
+                        <IconComponent className={`w-6 h-6 ${status.color}`} />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-4xl font-bold ${status.color}`}>{grade.grade_letter}</span>
+                        <span className={`text-lg font-medium ${status.color}`}>{status.label}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">{grade.semester}</p>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Submissions Table */}
+        {/* Recent Homework - Simple List */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              Assignment Submissions
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <FileText className="w-8 h-8 text-primary" />
+              Recent Homework
             </CardTitle>
           </CardHeader>
           <CardContent>
             {submissions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No submissions yet.</p>
+              <div className="text-center py-12">
+                <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                <p className="text-xl text-muted-foreground">No homework submitted yet</p>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Assignment</TableHead>
-                    <TableHead>Subject</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Score</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {submissions.map((sub) => (
-                    <TableRow key={sub.id}>
-                      <TableCell className="font-medium">{sub.assignment_title || 'Unknown'}</TableCell>
-                      <TableCell>{sub.assignment_subject || '-'}</TableCell>
-                      <TableCell>{new Date(sub.submitted_at).toLocaleDateString()}</TableCell>
-                      <TableCell>
+              <div className="space-y-4">
+                {submissions.slice(0, 5).map((sub) => (
+                  <div 
+                    key={sub.id} 
+                    className="p-5 rounded-xl border-2 bg-card hover:shadow-md transition-all"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-foreground">
+                          {sub.assignment_title || 'Homework'}
+                        </h4>
+                        <p className="text-muted-foreground">{sub.assignment_subject || 'Subject'}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {new Date(sub.submitted_at).toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                          })}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        {/* Status */}
                         {sub.is_late ? (
-                          <Badge variant="destructive">Late</Badge>
+                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-orange-600">
+                            <Clock className="w-5 h-5" />
+                            <span className="font-semibold">Late</span>
+                          </div>
                         ) : (
-                          <Badge variant="outline" className="bg-success/10 text-success">On Time</Badge>
+                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-600">
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span className="font-semibold">On Time</span>
+                          </div>
                         )}
-                      </TableCell>
-                      <TableCell>
+                        
+                        {/* Score */}
                         {sub.score !== null ? (
-                          <span className="font-semibold">{sub.score}/{sub.max_score || 100}</span>
+                          <div className="text-center px-4 py-2 rounded-xl bg-primary/10 min-w-[80px]">
+                            <p className="text-2xl font-bold text-primary">{sub.score}</p>
+                            <p className="text-xs text-muted-foreground">out of {sub.max_score || 100}</p>
+                          </div>
                         ) : (
-                          <Badge variant="secondary">Pending</Badge>
+                          <div className="px-4 py-2 rounded-xl bg-muted text-center">
+                            <p className="text-sm font-medium text-muted-foreground">Waiting</p>
+                            <p className="text-xs text-muted-foreground">for grade</p>
+                          </div>
                         )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

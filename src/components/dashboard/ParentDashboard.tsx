@@ -13,7 +13,8 @@ import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
-  Star
+  Star,
+  Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -46,11 +47,11 @@ interface StudentSubmission {
 
 // Simple grade to performance mapping
 const getGradeStatus = (grade: string) => {
-  if (grade.startsWith('A')) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-100', icon: Star };
-  if (grade.startsWith('B')) return { label: 'Good', color: 'text-blue-600', bg: 'bg-blue-100', icon: TrendingUp };
-  if (grade.startsWith('C')) return { label: 'Average', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: CheckCircle2 };
-  if (grade.startsWith('D')) return { label: 'Needs Work', color: 'text-orange-600', bg: 'bg-orange-100', icon: TrendingDown };
-  return { label: 'Failing', color: 'text-red-600', bg: 'bg-red-100', icon: AlertCircle };
+  if (grade.startsWith('A')) return { label: 'Excellent', color: 'text-green-600', bg: 'bg-green-100', icon: Star, points: 4 };
+  if (grade.startsWith('B')) return { label: 'Good', color: 'text-blue-600', bg: 'bg-blue-100', icon: TrendingUp, points: 3 };
+  if (grade.startsWith('C')) return { label: 'Average', color: 'text-yellow-600', bg: 'bg-yellow-100', icon: CheckCircle2, points: 2 };
+  if (grade.startsWith('D')) return { label: 'Needs Work', color: 'text-orange-600', bg: 'bg-orange-100', icon: TrendingDown, points: 1 };
+  return { label: 'Failing', color: 'text-red-600', bg: 'bg-red-100', icon: AlertCircle, points: 0 };
 };
 
 const getGPAMessage = (gpa: number) => {
@@ -58,6 +59,78 @@ const getGPAMessage = (gpa: number) => {
   if (gpa >= 3.0) return { message: "👍 Good job! Keep it up!", color: 'text-blue-600' };
   if (gpa >= 2.0) return { message: "📚 Satisfactory. Some improvement needed.", color: 'text-yellow-600' };
   return { message: "⚠️ Needs attention. Please meet with teachers.", color: 'text-red-600' };
+};
+
+// Simple circular progress component
+const CircularProgress: React.FC<{ value: number; label: string; color: string; icon: React.ReactNode }> = ({ 
+  value, label, color, icon 
+}) => {
+  const radius = 45;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (value / 100) * circumference;
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-32 h-32">
+        <svg className="w-32 h-32 transform -rotate-90">
+          <circle
+            cx="64"
+            cy="64"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            className="text-muted/30"
+          />
+          <circle
+            cx="64"
+            cy="64"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            className={color}
+            style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          {icon}
+          <span className="text-2xl font-bold mt-1">{Math.round(value)}%</span>
+        </div>
+      </div>
+      <p className="text-lg font-medium text-muted-foreground mt-2 text-center">{label}</p>
+    </div>
+  );
+};
+
+// Simple bar for subject performance
+const SubjectBar: React.FC<{ subject: string; grade: string; points: number }> = ({ subject, grade, points }) => {
+  const percentage = (points / 4) * 100;
+  const getBarColor = () => {
+    if (points >= 3.5) return 'bg-green-500';
+    if (points >= 2.5) return 'bg-blue-500';
+    if (points >= 1.5) return 'bg-yellow-500';
+    if (points >= 0.5) return 'bg-orange-500';
+    return 'bg-red-500';
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium text-foreground truncate flex-1">{subject}</span>
+        <span className="font-bold text-lg ml-2">{grade}</span>
+      </div>
+      <div className="h-4 bg-muted/50 rounded-full overflow-hidden">
+        <div 
+          className={`h-full ${getBarColor()} rounded-full transition-all duration-1000 ease-out`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+    </div>
+  );
 };
 
 const ParentDashboard: React.FC = () => {
@@ -268,12 +341,49 @@ const ParentDashboard: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Progress Overview - Visual Charts */}
+        <Card className="border-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-2xl">
+              <Target className="w-8 h-8 text-primary" />
+              Progress Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* On-Time Rate */}
+              <CircularProgress 
+                value={totalAssignments > 0 ? (completedOnTime / totalAssignments) * 100 : 0}
+                label="On-Time Rate"
+                color="text-success"
+                icon={<CheckCircle2 className="w-6 h-6 text-success" />}
+              />
+              
+              {/* Overall Score */}
+              <CircularProgress 
+                value={gpaPercentage}
+                label="Overall Score"
+                color="text-primary"
+                icon={<Award className="w-6 h-6 text-primary" />}
+              />
+              
+              {/* Homework Done */}
+              <CircularProgress 
+                value={totalAssignments > 0 ? 100 : 0}
+                label={`${totalAssignments} Homework Done`}
+                color="text-info"
+                icon={<FileText className="w-6 h-6 text-info" />}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Quick Stats - Very Simple */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="border-2 hover:shadow-lg transition-shadow">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-blue-100 flex items-center justify-center mb-4">
-                <FileText className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 mx-auto rounded-full bg-info/20 flex items-center justify-center mb-4">
+                <FileText className="w-8 h-8 text-info" />
               </div>
               <p className="text-4xl font-bold text-foreground">{totalAssignments}</p>
               <p className="text-lg text-muted-foreground mt-2">Total Homework</p>
@@ -282,24 +392,49 @@ const ParentDashboard: React.FC = () => {
 
           <Card className="border-2 hover:shadow-lg transition-shadow">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 mx-auto rounded-full bg-success/20 flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-success" />
               </div>
-              <p className="text-4xl font-bold text-green-600">{completedOnTime}</p>
+              <p className="text-4xl font-bold text-success">{completedOnTime}</p>
               <p className="text-lg text-muted-foreground mt-2">On Time ✓</p>
             </CardContent>
           </Card>
 
           <Card className="border-2 hover:shadow-lg transition-shadow">
             <CardContent className="p-6 text-center">
-              <div className="w-16 h-16 mx-auto rounded-full bg-orange-100 flex items-center justify-center mb-4">
-                <Clock className="w-8 h-8 text-orange-600" />
+              <div className="w-16 h-16 mx-auto rounded-full bg-warning/20 flex items-center justify-center mb-4">
+                <Clock className="w-8 h-8 text-warning" />
               </div>
-              <p className="text-4xl font-bold text-orange-600">{lateSubmissions}</p>
+              <p className="text-4xl font-bold text-warning">{lateSubmissions}</p>
               <p className="text-lg text-muted-foreground mt-2">Late ⚠️</p>
             </CardContent>
           </Card>
         </div>
+
+        {/* Subject Performance Bars */}
+        {grades.length > 0 && (
+          <Card className="border-2">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center gap-3 text-2xl">
+                <TrendingUp className="w-8 h-8 text-primary" />
+                Subject Performance
+              </CardTitle>
+              <p className="text-muted-foreground">How your child is doing in each subject</p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {grades.map((grade) => (
+                  <SubjectBar 
+                    key={grade.id}
+                    subject={grade.subject}
+                    grade={grade.grade_letter}
+                    points={grade.grade_points}
+                  />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Subject Grades - Simple Cards */}
         <Card>
@@ -382,12 +517,12 @@ const ParentDashboard: React.FC = () => {
                       <div className="flex items-center gap-4">
                         {/* Status */}
                         {sub.is_late ? (
-                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-100 text-orange-600">
+                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-warning/20 text-warning">
                             <Clock className="w-5 h-5" />
                             <span className="font-semibold">Late</span>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-600">
+                          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-success/20 text-success">
                             <CheckCircle2 className="w-5 h-5" />
                             <span className="font-semibold">On Time</span>
                           </div>

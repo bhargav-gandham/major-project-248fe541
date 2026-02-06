@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
+import GenerateAssignmentsForm from '@/components/faculty/GenerateAssignmentsForm';
 import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { PlagiarismReportCard } from '@/components/faculty/PlagiarismReportCard';
@@ -228,6 +229,8 @@ const FacultyDashboard: React.FC = () => {
             </Card>
           </div>
 
+          <GenerateAssignmentsForm onCreated={fetchAssignments} />
+
           <CreateAssignmentForm onCreated={fetchAssignments} />
 
           <Card>
@@ -288,6 +291,7 @@ const FacultyDashboard: React.FC = () => {
 
       {activeTab === 'assignments' && (
         <div className="space-y-6 animate-fade-in">
+          <GenerateAssignmentsForm onCreated={fetchAssignments} />
           <CreateAssignmentForm onCreated={fetchAssignments} />
           
           <Card>

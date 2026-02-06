@@ -4,9 +4,10 @@ import SubmitAssignmentForm from '@/components/student/SubmitAssignmentForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { StudentGrades } from '@/components/grades/StudentGrades';
 import LearningPathCard from '@/components/learning/LearningPathCard';
+import StudentQuizList from '@/components/student/StudentQuizList';
 import { useAssignments, useSubmissions, Assignment } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
-import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2, BookOpen } from 'lucide-react';
+import { FileText, GraduationCap, Clock, CheckCircle, AlertCircle, Loader2, BookOpen, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +48,7 @@ const StudentDashboard: React.FC = () => {
     switch (activeTab) {
       case 'dashboard': return 'Student Dashboard';
       case 'assignments': return 'My Assignments';
+      case 'quizzes': return 'Quizzes';
       case 'eligibility': return 'Exam Eligibility';
       case 'grades': return 'My Grades';
       case 'notes': return 'Study Notes';
@@ -353,6 +355,25 @@ const StudentDashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === 'quizzes' && (
+        <div className="space-y-6 animate-fade-in">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-3">
+                <HelpCircle className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Quizzes</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Take quizzes assigned by your teachers to test your knowledge
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <StudentQuizList />
         </div>
       )}
 

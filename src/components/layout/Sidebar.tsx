@@ -14,7 +14,8 @@ import {
   ClipboardCheck,
   FolderOpen,
   BarChart3,
-  Shield
+  Shield,
+  HelpCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -40,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'assignments', label: 'Assignments', icon: FileText },
           { id: 'submissions', label: 'Submissions', icon: ClipboardCheck },
+          { id: 'quizzes', label: 'Quizzes', icon: HelpCircle },
           { id: 'grades', label: 'Grade Book', icon: BarChart3 },
           { id: 'notes', label: 'Study Notes', icon: BookOpen },
           { id: 'integrity', label: 'Academic Integrity', icon: Shield },
@@ -49,6 +51,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         return [
           { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { id: 'assignments', label: 'My Assignments', icon: FileText },
+          { id: 'quizzes', label: 'Quizzes', icon: HelpCircle },
           { id: 'eligibility', label: 'Exam Eligibility', icon: GraduationCap },
           { id: 'notes', label: 'Study Notes', icon: BookOpen },
           { id: 'grades', label: 'My Grades', icon: BarChart3 },

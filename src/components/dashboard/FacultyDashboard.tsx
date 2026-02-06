@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import CreateAssignmentForm from '@/components/faculty/CreateAssignmentForm';
 import GenerateAssignmentsForm from '@/components/faculty/GenerateAssignmentsForm';
+import GenerateQuizForm from '@/components/faculty/GenerateQuizForm';
+import QuizList from '@/components/faculty/QuizList';
 import { CreateNoteForm } from '@/components/faculty/CreateNoteForm';
 import { NoteCard } from '@/components/notes/NoteCard';
 import { PlagiarismReportCard } from '@/components/faculty/PlagiarismReportCard';
@@ -11,7 +13,7 @@ import { useAssignments, useSubmissions } from '@/hooks/useAssignments';
 import { useNotes } from '@/hooks/useNotes';
 import { usePlagiarismCheck, PlagiarismReport } from '@/hooks/usePlagiarismCheck';
 import { supabase } from '@/integrations/supabase/client';
-import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search, Brain, Users, Mail } from 'lucide-react';
+import { FileText, ClipboardCheck, Loader2, Trash2, Calendar, Award, BookOpen, Shield, Search, Brain, Users, Mail, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +141,7 @@ const FacultyDashboard: React.FC = () => {
       case 'dashboard': return 'Faculty Dashboard';
       case 'assignments': return 'Manage Assignments';
       case 'submissions': return 'Student Submissions';
+      case 'quizzes': return 'Quizzes';
       case 'grades': return 'Grade Book';
       case 'notes': return 'Study Notes';
       case 'integrity': return 'Academic Integrity';
@@ -473,6 +476,13 @@ const FacultyDashboard: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {activeTab === 'quizzes' && (
+        <div className="space-y-6 animate-fade-in">
+          <GenerateQuizForm />
+          <QuizList />
         </div>
       )}
 

@@ -187,6 +187,43 @@ const ResearchPaper: React.FC = () => {
                   <tr><td className="border border-gray-400 p-2">Data</td><td className="border border-gray-400 p-2">PostgreSQL + Row-Level Security</td><td className="border border-gray-400 p-2">Persistent storage, access control enforcement</td></tr>
                 </tbody>
               </table>
+
+              {/* System Architecture Diagram */}
+              <div className="mt-6 mb-4">
+                <p className="text-center font-bold text-sm mb-3">Figure 1: System Architecture Diagram</p>
+                <div className="border border-gray-400 rounded p-4" style={{ background: '#fafafa' }}>
+                  {/* Presentation Layer */}
+                  <div className="border-2 border-blue-500 rounded p-3 mb-3" style={{ background: '#eff6ff' }}>
+                    <p className="font-bold text-xs text-blue-700 mb-2 text-center">PRESENTATION LAYER</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {['React 18 UI', 'React Router', 'TanStack Query', 'Tailwind CSS'].map(t => (
+                        <span key={t} className="border border-blue-400 rounded px-2 py-1 text-xs bg-white">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-center text-gray-400 text-lg leading-none mb-1">▼ HTTP / REST API ▼</div>
+                  {/* Logic Layer */}
+                  <div className="border-2 border-green-500 rounded p-3 mb-3" style={{ background: '#f0fdf4' }}>
+                    <p className="font-bold text-xs text-green-700 mb-2 text-center">LOGIC LAYER (Edge Functions)</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {['Quiz Generation', 'Assignment Gen', 'Plagiarism Check', 'Evaluation', 'Learning Path'].map(t => (
+                        <span key={t} className="border border-green-400 rounded px-2 py-1 text-xs bg-white">{t}</span>
+                      ))}
+                    </div>
+                    <div className="text-center mt-2 text-gray-400 text-sm">↕ Google Gemini LLM API</div>
+                  </div>
+                  <div className="text-center text-gray-400 text-lg leading-none mb-1">▼ SQL + RLS ▼</div>
+                  {/* Data Layer */}
+                  <div className="border-2 border-orange-500 rounded p-3" style={{ background: '#fff7ed' }}>
+                    <p className="font-bold text-xs text-orange-700 mb-2 text-center">DATA LAYER</p>
+                    <div className="flex justify-center gap-2 flex-wrap">
+                      {['PostgreSQL', 'Row-Level Security', 'JWT Auth', 'RBAC Policies'].map(t => (
+                        <span key={t} className="border border-orange-400 rounded px-2 py-1 text-xs bg-white">{t}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </SubSection>
             <SubSection title="3.2 Technology Stack">
               <table className="w-full border-collapse border border-gray-400 mt-3 text-xs">
@@ -244,6 +281,59 @@ const ResearchPaper: React.FC = () => {
                   <tr><td className="border border-gray-400 p-2 font-semibold">Parent</td><td className="border border-gray-400 p-2">View linked child's grades, submissions, and profile (read-only)</td></tr>
                 </tbody>
               </table>
+
+              {/* RBAC Diagram */}
+              <div className="mt-6 mb-4">
+                <p className="text-center font-bold text-sm mb-3">Figure 2: Role-Based Access Control (RBAC) Hierarchy</p>
+                <div className="border border-gray-400 rounded p-4" style={{ background: '#fafafa' }}>
+                  {/* Admin */}
+                  <div className="flex justify-center mb-2">
+                    <div className="border-2 border-red-500 rounded-lg px-6 py-2 text-center" style={{ background: '#fef2f2', minWidth: '180px' }}>
+                      <p className="font-bold text-sm text-red-700">👑 ADMIN</p>
+                      <p className="text-xs text-gray-600 mt-1">Full System Access</p>
+                    </div>
+                  </div>
+                  <div className="text-center text-gray-400 leading-none mb-2">│<br />├────────────────┬────────────────┤</div>
+                  {/* Faculty & Student */}
+                  <div className="flex justify-center gap-8 mb-2">
+                    <div className="border-2 border-blue-500 rounded-lg px-4 py-2 text-center" style={{ background: '#eff6ff', minWidth: '160px' }}>
+                      <p className="font-bold text-sm text-blue-700">📚 FACULTY</p>
+                      <p className="text-xs text-gray-600 mt-1">Create &amp; Grade</p>
+                      <div className="mt-2 space-y-1">
+                        {['Assignments', 'Quizzes', 'Notes', 'Grades', 'Plagiarism'].map(c => (
+                          <span key={c} className="block text-xs border border-blue-300 rounded px-1 bg-white">{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="border-2 border-green-500 rounded-lg px-4 py-2 text-center" style={{ background: '#f0fdf4', minWidth: '160px' }}>
+                      <p className="font-bold text-sm text-green-700">🎓 STUDENT</p>
+                      <p className="text-xs text-gray-600 mt-1">Submit &amp; View</p>
+                      <div className="mt-2 space-y-1">
+                        {['Submissions', 'Quizzes', 'Grades', 'Learning Path', 'Notes'].map(c => (
+                          <span key={c} className="block text-xs border border-green-300 rounded px-1 bg-white">{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center text-gray-400 leading-none mb-2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│</div>
+                  {/* Parent */}
+                  <div className="flex justify-center">
+                    <div className="border-2 border-purple-500 rounded-lg px-6 py-2 text-center" style={{ background: '#faf5ff', minWidth: '160px' }}>
+                      <p className="font-bold text-sm text-purple-700">👨‍👩‍👧 PARENT</p>
+                      <p className="text-xs text-gray-600 mt-1">Read-Only (Linked Student)</p>
+                      <div className="mt-2 space-y-1">
+                        {['View Grades', 'View Submissions', 'View Profile'].map(c => (
+                          <span key={c} className="block text-xs border border-purple-300 rounded px-1 bg-white">{c}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  {/* RLS Note */}
+                  <div className="mt-4 border border-gray-300 rounded p-2 text-center" style={{ background: '#f9fafb' }}>
+                    <p className="text-xs text-gray-600">🔒 All access enforced via <b>Row-Level Security (RLS)</b> policies at the database level</p>
+                  </div>
+                </div>
+              </div>
             </SubSection>
             <SubSection title="4.2 Row-Level Security (RLS)">
               <p>

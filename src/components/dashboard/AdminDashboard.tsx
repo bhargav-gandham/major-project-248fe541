@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import StatCard from '@/components/cards/StatCard';
 import CreateUserForm from '@/components/admin/CreateUserForm';
+import ParentStudentLinkManager from '@/components/admin/ParentStudentLinkManager';
 import { useUsers } from '@/hooks/useUsers';
 import { subjects } from '@/data/mockData';
 import { Users, BookOpen, FileText, Settings, Shield, TrendingUp, AlertCircle, Loader2 } from 'lucide-react';
@@ -215,6 +216,7 @@ const AdminDashboard: React.FC = () => {
       {activeTab === 'users' && (
         <div className="space-y-6 animate-fade-in">
           <CreateUserForm onUserCreated={refetch} />
+          <ParentStudentLinkManager />
           <Card>
             <CardHeader>
               <CardTitle>All Users</CardTitle>

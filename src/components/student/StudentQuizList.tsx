@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { useQuizzes, useQuizQuestions, useQuizAttempts, Quiz } from '@/hooks/useQuizzes';
 import { Loader2, Clock, CheckCircle, XCircle, HelpCircle, Play, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const StudentQuizList: React.FC = () => {
   const { quizzes, isLoading } = useQuizzes();
@@ -151,15 +152,19 @@ const TakeQuiz: React.FC<{ quiz: Quiz; onComplete: () => void; onCancel: () => v
       const totalPoints = questions.reduce((sum, q) => sum + q.points, 0);
       const attempt = await startAttempt(quiz.id, totalPoints);
 
-      const answerData = questions.map(q => {
+      const answerData = await Promise.all(questions.map(async (q) => {
         const selected = answers[q.id] || '';
-        const isCorrect = selected === q.correct_answer;
+        // Validate answer server-side using secure DB function
+        const { data: isCorrect } = await supabase.rpc('validate_quiz_answer', {
+          _question_id: q.id,
+          _selected_answer: selected,
+        });
         return {
           question_id: q.id,
           selected_answer: selected,
-          is_correct: isCorrect,
+          is_correct: isCorrect === true,
         };
-      });
+      }));
 
       const score = answerData.filter(a => a.is_correct).reduce((sum, a) => {
         const q = questions.find(q => q.id === a.question_id);
@@ -174,7 +179,6 @@ const TakeQuiz: React.FC<{ quiz: Quiz; onComplete: () => void; onCancel: () => v
         details: answerData.map((a, i) => ({
           ...a,
           question: questions[i].question,
-          correct_answer: questions[i].correct_answer,
           options: questions[i].options,
         })),
       });
@@ -228,7 +232,7 @@ const TakeQuiz: React.FC<{ quiz: Quiz; onComplete: () => void; onCancel: () => v
                         <span
                           key={oi}
                           className={`text-xs px-2 py-1 rounded ${
-                            opt === d.correct_answer
+                            opt === d.selected_answer && d.is_correct
                               ? 'bg-success/20 text-success font-semibold'
                               : opt === d.selected_answer && !d.is_correct
                               ? 'bg-destructive/20 text-destructive'

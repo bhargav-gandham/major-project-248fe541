@@ -506,6 +506,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_student_quiz_questions: {
+        Args: { _quiz_id: string }
+        Returns: {
+          id: string
+          options: Json
+          points: number
+          question: string
+          question_order: number
+          quiz_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -515,6 +526,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      validate_quiz_answer: {
+        Args: { _question_id: string; _selected_answer: string }
         Returns: boolean
       }
     }

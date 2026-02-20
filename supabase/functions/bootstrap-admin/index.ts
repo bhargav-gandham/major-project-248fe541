@@ -11,13 +11,14 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { secret_key, email, password, full_name } = await req.json()
+    const { email, password, full_name } = await req.json()
 
-    // Simple secret key check for bootstrap - should only be used once
-    if (secret_key !== 'BOOTSTRAP_ADMIN_2024') {
+    // Server-side gate: bootstrap is only allowed if the BOOTSTRAP_SECRET_KEY env var is configured
+    const bootstrapKey = Deno.env.get('BOOTSTRAP_SECRET_KEY')
+    if (!bootstrapKey) {
       return new Response(
-        JSON.stringify({ error: 'Invalid bootstrap key' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Bootstrap is disabled (no secret key configured)' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 

@@ -36,7 +36,6 @@ const SetupPage: React.FC<SetupPageProps> = ({ onComplete }) => {
     try {
       const { data, error } = await supabase.functions.invoke('bootstrap-admin', {
         body: {
-          secret_key: 'BOOTSTRAP_ADMIN_2024',
           email,
           password,
           full_name: fullName,

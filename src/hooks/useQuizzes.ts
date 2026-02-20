@@ -128,6 +128,7 @@ export const useQuizzes = () => {
 export const useQuizQuestions = (quizId: string | null) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!quizId) return;
@@ -135,14 +136,30 @@ export const useQuizQuestions = (quizId: string | null) => {
     const fetch = async () => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('quiz_questions')
-          .select('*')
-          .eq('quiz_id', quizId)
-          .order('question_order');
-
-        if (error) throw error;
-        setQuestions((data as QuizQuestion[]) || []);
+        // Students use the secure function that excludes correct_answer
+        if (user?.role === 'student') {
+          const { data, error } = await supabase.rpc('get_student_quiz_questions', {
+            _quiz_id: quizId,
+          });
+          if (error) throw error;
+          // Map to QuizQuestion shape (correct_answer will be empty)
+          setQuestions(
+            (data || []).map((q: any) => ({
+              ...q,
+              correct_answer: '', // Not available for students
+              created_at: '',
+            }))
+          );
+        } else {
+          // Faculty/admin can see all fields
+          const { data, error } = await supabase
+            .from('quiz_questions')
+            .select('*')
+            .eq('quiz_id', quizId)
+            .order('question_order');
+          if (error) throw error;
+          setQuestions((data as QuizQuestion[]) || []);
+        }
       } catch (error) {
         console.error('Error fetching questions:', error);
       } finally {
@@ -150,7 +167,7 @@ export const useQuizQuestions = (quizId: string | null) => {
       }
     };
     fetch();
-  }, [quizId]);
+  }, [quizId, user?.role]);
 
   return { questions, isLoading };
 };

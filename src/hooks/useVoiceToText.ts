@@ -9,6 +9,7 @@ interface UseVoiceToTextOptions {
   onError?: (error: string) => void;
 }
 
+// Voice-to-text hook with lazy initialization
 export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   const {
     continuous = true,

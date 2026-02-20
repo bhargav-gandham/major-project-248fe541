@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useScribe } from '@elevenlabs/react';
-import { CommitStrategy } from '@elevenlabs/react';
+import { useScribe, CommitStrategy } from '@elevenlabs/react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface UseVoiceToTextOptions {
@@ -37,6 +36,15 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   const scribe = useScribe({
     modelId: 'scribe_v2_realtime',
     commitStrategy: CommitStrategy.VAD,
+    onConnect: () => {
+      console.log('[Voice] Scribe connected successfully');
+      setIsListening(true);
+    },
+    onDisconnect: () => {
+      console.log('[Voice] Scribe disconnected');
+      setIsListening(false);
+      setInterimTranscript('');
+    },
     onPartialTranscript: (data) => {
       console.log('[Voice] Partial:', data.text);
       setInterimTranscript(data.text);
@@ -51,6 +59,24 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
       setInterimTranscript('');
       onResultRef.current?.(newTranscript);
     },
+    onError: (err) => {
+      console.error('[Voice] Scribe error:', err);
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      onErrorRef.current?.(message);
+    },
+    onAuthError: (data) => {
+      console.error('[Voice] Auth error:', data.error);
+      setError('Authentication error: ' + data.error);
+    },
+    onQuotaExceededError: (data) => {
+      console.error('[Voice] Quota exceeded:', data.error);
+      setError('Quota exceeded: ' + data.error);
+    },
+    onInsufficientAudioActivityError: (data) => {
+      console.error('[Voice] Insufficient audio:', data.error);
+      setError('No audio detected: ' + data.error);
+    },
   });
 
   const startListening = useCallback(async () => {
@@ -60,6 +86,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     try {
       // Request microphone permission first
       await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('[Voice] Microphone permission granted');
 
       // Get token from edge function
       const { data, error: fnError } = await supabase.functions.invoke(
@@ -70,7 +97,8 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
         throw new Error(fnError?.message || 'Failed to get transcription token');
       }
 
-      console.log('[Voice] Got token, connecting...');
+      console.log('[Voice] Got token, connecting to Scribe...');
+      console.log('[Voice] Scribe status before connect:', scribe.status);
 
       await scribe.connect({
         token: data.token,
@@ -81,8 +109,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
         },
       });
 
-      console.log('[Voice] Connected to ElevenLabs Scribe');
-      setIsListening(true);
+      console.log('[Voice] Scribe connect() resolved, status:', scribe.status);
     } catch (err: any) {
       console.error('[Voice] Error starting:', err);
       const message = err.message || 'Failed to start voice recording';
@@ -94,7 +121,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   }, [scribe]);
 
   const stopListening = useCallback(() => {
-    console.log('[Voice] Stopping...');
+    console.log('[Voice] Stopping, status:', scribe.status);
     scribe.disconnect();
     setIsListening(false);
     setInterimTranscript('');

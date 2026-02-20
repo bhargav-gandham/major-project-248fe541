@@ -50,7 +50,11 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
       setInterimTranscript(data.text);
     },
     onCommittedTranscript: (data) => {
-      console.log('[Voice] Committed:', data.text);
+      console.log('[Voice] Committed:', JSON.stringify(data));
+      if (!data.text || data.text.trim() === '') {
+        console.warn('[Voice] Empty transcript committed - mic may not be capturing audio');
+        return;
+      }
       const newTranscript = finalTranscriptRef.current
         ? finalTranscriptRef.current + ' ' + data.text
         : data.text;

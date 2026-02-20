@@ -70,9 +70,34 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     recognition.lang = language;
 
     recognition.onstart = () => {
-      console.log('[Voice] Recognition started');
+      console.log('[Voice] Recognition started successfully');
+      console.log('[Voice] continuous:', recognition.continuous, 'interimResults:', recognition.interimResults, 'lang:', recognition.lang);
       setIsListening(true);
       setError(null);
+    };
+
+    recognition.onaudiostart = () => {
+      console.log('[Voice] Audio capture started - microphone is active');
+    };
+
+    recognition.onsoundstart = () => {
+      console.log('[Voice] Sound detected');
+    };
+
+    recognition.onspeechstart = () => {
+      console.log('[Voice] Speech detected!');
+    };
+
+    recognition.onspeechend = () => {
+      console.log('[Voice] Speech ended');
+    };
+
+    recognition.onsoundend = () => {
+      console.log('[Voice] Sound ended');
+    };
+
+    recognition.onaudioend = () => {
+      console.log('[Voice] Audio capture ended');
     };
 
     recognition.onend = () => {

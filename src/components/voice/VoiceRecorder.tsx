@@ -162,8 +162,9 @@ export const VoiceRecorder = ({
         )}
 
         {/* Footer Info */}
-        <div className="px-4 pb-3 text-xs text-muted-foreground">
+        <div className="px-4 pb-3 text-xs text-muted-foreground space-y-1">
           <p>💡 Tip: Speak clearly and pause briefly between sentences for best results.</p>
+          <p>⚠️ Voice dictation may not work in embedded previews. If it's not capturing speech, open the app in a <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline font-medium text-primary">new browser tab</a>.</p>
         </div>
       </CardContent>
     </Card>

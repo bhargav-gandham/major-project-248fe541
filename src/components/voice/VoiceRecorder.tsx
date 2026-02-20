@@ -3,7 +3,7 @@ import { useVoiceToText } from '@/hooks/useVoiceToText';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Mic, MicOff, RotateCcw, AlertCircle, Volume2 } from 'lucide-react';
+import { Mic, MicOff, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -22,10 +22,10 @@ export const VoiceRecorder = ({
 }: VoiceRecorderProps) => {
   const {
     isListening,
+    isConnecting,
     transcript,
     interimTranscript,
     error,
-    isSupported,
     toggleListening,
     resetTranscript,
   } = useVoiceToText({
@@ -52,24 +52,6 @@ export const VoiceRecorder = ({
     onTranscriptChange('');
   };
 
-  if (!isSupported) {
-    return (
-      <Card className={cn("border-destructive/50 bg-destructive/5", className)}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3 text-destructive">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <div>
-              <p className="font-medium">Voice Input Not Supported</p>
-              <p className="text-sm text-muted-foreground">
-                Please use Chrome, Edge, or Safari for voice dictation.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className={cn("overflow-hidden", className)}>
       <CardContent className="p-0">
@@ -81,12 +63,18 @@ export const VoiceRecorder = ({
               variant={isListening ? "destructive" : "default"}
               size="sm"
               onClick={toggleListening}
+              disabled={isConnecting}
               className={cn(
                 "gap-2 transition-all",
                 isListening && "animate-pulse"
               )}
             >
-              {isListening ? (
+              {isConnecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connecting...
+                </>
+              ) : isListening ? (
                 <>
                   <MicOff className="h-4 w-4" />
                   Stop Recording
@@ -162,9 +150,8 @@ export const VoiceRecorder = ({
         )}
 
         {/* Footer Info */}
-        <div className="px-4 pb-3 text-xs text-muted-foreground space-y-1">
+        <div className="px-4 pb-3 text-xs text-muted-foreground">
           <p>💡 Tip: Speak clearly and pause briefly between sentences for best results.</p>
-          <p>⚠️ Voice dictation may not work in embedded previews. If it's not capturing speech, open the app in a <a href={window.location.href} target="_blank" rel="noopener noreferrer" className="underline font-medium text-primary">new browser tab</a>.</p>
         </div>
       </CardContent>
     </Card>

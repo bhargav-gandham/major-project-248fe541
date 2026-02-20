@@ -70,6 +70,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const finalTranscriptRef = useRef(initialValue);
+  const shouldRestartRef = useRef(false);
   
   // Use refs for callbacks to avoid recreating recognition on every render
   const onResultRef = useRef(onResult);
@@ -115,7 +116,17 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     };
 
     recognition.onend = () => {
-      console.log('[Voice] Recognition ended');
+      console.log('[Voice] Recognition ended, shouldRestart:', shouldRestartRef.current);
+      if (shouldRestartRef.current) {
+        // Auto-restart after silence timeout or no-speech
+        try {
+          console.log('[Voice] Auto-restarting recognition...');
+          recognition.start();
+          return;
+        } catch (e) {
+          console.log('[Voice] Failed to auto-restart:', e);
+        }
+      }
       setIsListening(false);
     };
 
@@ -123,11 +134,16 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
       console.log('[Voice] Recognition error:', event.error);
       const errorMessages: Record<string, string> = {
         'not-allowed': 'Microphone access denied. Please allow microphone access.',
-        'no-speech': 'No speech detected. Please try again.',
         'audio-capture': 'No microphone found. Please check your device.',
         'network': 'Network error. Please check your connection.',
         'aborted': 'Speech recognition was aborted.',
       };
+      
+      // no-speech is a normal timeout, don't show error - will auto-restart via onend
+      if (event.error === 'no-speech') {
+        console.log('[Voice] No speech timeout - will auto-restart');
+        return;
+      }
       
       const message = errorMessages[event.error] || `Speech recognition error: ${event.error}`;
       setError(message);
@@ -167,6 +183,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
 
     return () => {
       console.log('[Voice] Cleaning up recognition');
+      shouldRestartRef.current = false;
       recognition.abort();
     };
   }, [continuous, interimResults, language]); // Removed onResult and onError from deps
@@ -184,6 +201,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
       console.log('[Voice] Microphone permission granted');
       
       finalTranscriptRef.current = transcript; // Preserve existing transcript
+      shouldRestartRef.current = true;
       setError(null);
       console.log('[Voice] Starting recognition...');
       recognitionRef.current.start();
@@ -198,6 +216,7 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
   const stopListening = useCallback(() => {
     if (!recognitionRef.current) return;
     console.log('[Voice] Stopping recognition...');
+    shouldRestartRef.current = false;
     recognitionRef.current.stop();
   }, []);
 

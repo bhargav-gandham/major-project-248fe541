@@ -188,26 +188,21 @@ export const useVoiceToText = (options: UseVoiceToTextOptions = {}) => {
     };
   }, [continuous, interimResults, language]); // Removed onResult and onError from deps
 
-  const startListening = useCallback(async () => {
+  const startListening = useCallback(() => {
     if (!recognitionRef.current || !isSupported) {
       console.log('[Voice] Cannot start - not supported or no recognition');
       return;
     }
 
     try {
-      console.log('[Voice] Requesting microphone permission...');
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log('[Voice] Microphone permission granted');
-      
       finalTranscriptRef.current = transcript; // Preserve existing transcript
       shouldRestartRef.current = true;
       setError(null);
-      console.log('[Voice] Starting recognition...');
+      console.log('[Voice] Starting recognition directly from user gesture...');
       recognitionRef.current.start();
     } catch (err) {
-      console.log('[Voice] Microphone permission denied:', err);
-      const message = 'Microphone access denied. Please allow microphone access in your browser settings.';
+      console.log('[Voice] Failed to start recognition:', err);
+      const message = 'Failed to start speech recognition. Please check microphone permissions.';
       setError(message);
       onErrorRef.current?.(message);
     }
